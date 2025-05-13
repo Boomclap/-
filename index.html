@@ -266,9 +266,20 @@
                         </div>
                     </div>
                 </div>
-                <button class="text-slate-500 hover:text-blue-600">
-                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=32&rounded=true" alt="User Avatar" class="w-8 h-8 rounded-full">
-                </button>
+                <div class="relative">
+                    <button id="user-avatar-button" class="focus:outline-none">
+                        <img id="user-avatar-img" src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=32&rounded=true" alt="User Avatar" class="w-8 h-8 rounded-full">
+                    </button>
+                    <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-50 py-1">
+                        <div class="px-4 py-2 border-b border-slate-100">
+                            <p class="text-sm font-medium text-slate-700 truncate" id="dropdown-username">用户</p>
+                        </div>
+
+                        <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                            <i class="fas fa-sign-out-alt w-4 mr-2"></i>退出登录
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -512,6 +523,66 @@
 
         // Initial Tab
         openTab('文献纵横, 欢迎您', 'welcome.html');
+
+        // Check login status on page load
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html'; // Redirect to login if not logged in
+        } else {
+            const storedUsername = sessionStorage.getItem('username');
+            if (storedUsername) {
+                const avatarImg = document.getElementById('user-avatar-img');
+                if (avatarImg) { // Update avatar with username initial
+                     avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedUsername)}&background=0D8ABC&color=fff&size=32&rounded=true&font-size=0.5`;
+                }
+                const dropdownUsernameEl = document.getElementById('dropdown-username');
+                if(dropdownUsernameEl) dropdownUsernameEl.textContent = storedUsername;
+            }
+        }
+
+        const userAvatarButton = document.getElementById('user-avatar-button');
+        const userDropdown = document.getElementById('user-dropdown');
+        const logoutButton = document.getElementById('logout-button');
+
+        if (userAvatarButton && userDropdown) {
+            userAvatarButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('hidden');
+            });
+        }
+
+        if (logoutButton) {
+            logoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('username');
+                window.location.href = 'login.html';
+            });
+        }
+
+        // Hide user dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (userDropdown && !userDropdown.classList.contains('hidden')) {
+                if (!userAvatarButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.add('hidden');
+                }
+            }
+            // ... (your existing document click listener for context menu, tasks, flyout) ...
+            // Ensure that part is also here, for example:
+            if (contextMenu && !contextMenu.contains(e.target)) {
+                contextMenu.classList.add('hidden');
+            }
+            const tasksDropdown = document.getElementById('tasks-dropdown'); // Make sure it's defined
+            const tasksButton = document.getElementById('tasks-button');     // Make sure it's defined
+            if (tasksDropdown && tasksButton && !tasksDropdown.contains(e.target) && e.target !== tasksButton && !tasksButton.contains(e.target)) {
+                 tasksDropdown.classList.add('hidden');
+            }
+             const sidebarFlyout = document.getElementById('sidebar-flyout');
+             const collapsedFolderBtn = document.getElementById('collapsed-folder-btn');
+             if (sidebarFlyout && collapsedFolderBtn && !sidebarFlyout.contains(e.target) && e.target !== collapsedFolderBtn && !collapsedFolderBtn.contains(e.target)) {
+                sidebarFlyout.classList.add('hidden');
+            }
+        });
+
 
     </script>
 </body>

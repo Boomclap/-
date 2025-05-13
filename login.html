@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 文献纵横</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background-image: url('https://source.unsplash.com/random/1920x1080/?technology,library,abstract');
+            background-size: cover;
+            background-position: center;
+        }
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2); /* Light overlay for readability */
+            backdrop-filter: blur(8px); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 0.75rem; /* rounded-xl */
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+    <div class="login-container relative bg-transparent p-8 sm:p-10 md:p-12 rounded-xl shadow-2xl w-full max-w-md">
+        <div class="text-center mb-8">
+            <i class="fas fa-book-reader text-5xl text-blue-600 mb-3"></i>
+            <h1 class="text-3xl font-bold text-slate-800">文献纵横</h1>
+            <p class="text-slate-600 text-sm mt-1">欢迎回来，请登录您的账户</p>
+        </div>
+
+        <form id="login-form">
+            <div class="mb-5">
+                <label for="username" class="block text-sm font-medium text-slate-700 mb-1.5">用户名</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fas fa-user text-slate-400"></i>
+                    </span>
+                    <input type="text" id="username" name="username" required
+                           class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm shadow-sm"
+                           placeholder="请输入用户名">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">密码</label>
+                 <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fas fa-lock text-slate-400"></i>
+                    </span>
+                    <input type="password" id="password" name="password" required
+                           class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm shadow-sm"
+                           placeholder="请输入密码">
+                </div>
+            </div>
+            
+            <div id="error-message" class="hidden text-center text-red-500 text-sm mb-4 p-2 bg-red-100 border border-red-300 rounded-md">
+                用户名或密码错误！
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors shadow-md hover:shadow-lg">
+                <i class="fas fa-sign-in-alt mr-2"></i> 登 录
+            </button>
+        </form>
+
+        <p class="text-xs text-center text-slate-500 mt-8">
+            © 2024 文献纵横. All rights reserved.
+        </p>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+
+        // Redirect to index if already logged in
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'index.html';
+        }
+
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            errorMessage.classList.add('hidden'); // Hide error on new attempt
+
+            const username = this.username.value;
+            const password = this.password.value;
+
+            // Simulate authentication (replace with actual API call in a real app)
+            if (username === 'admin' && password === 'password') {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('username', username); // Store username for display
+                window.location.href = 'index.html';
+            } else if (username === 'user' && password === 'user') {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('username', username);
+                window.location.href = 'index.html';
+            } else {
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
