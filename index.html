@@ -583,6 +583,74 @@
             }
         });
 
+        function addListenersToTreeItems(treeRootElement, isFlyout = false) {
+            const currentTreeItems = treeRootElement.querySelectorAll('.tree-item > div'); // Direct children divs of .tree-item
+            
+            currentTreeItems.forEach(itemDiv => {
+                // Clone to remove old listeners, then re-add to the clone
+                const newItemDiv = itemDiv.cloneNode(true);
+                itemDiv.parentNode.replaceChild(newItemDiv, itemDiv);
+
+                newItemDiv.addEventListener('contextmenu', (event) => showContextMenu(event, newItemDiv));
+                
+                newItemDiv.addEventListener('click', () => {
+                    const spanElement = newItemDiv.querySelector('span'); // Get span within newItemDiv
+                    if (!spanElement) return;
+                    
+                    const itemNameElement = spanElement.childNodes[0]; // Assuming first child is the text node
+                    const itemName = itemNameElement ? itemNameElement.nodeValue.trim() : "未知项";
+
+                    const iconElement = newItemDiv.querySelector('i');
+                    const isFolder = iconElement && (iconElement.classList.contains('fa-folder') || iconElement.classList.contains('fa-folder-open'));
+                    
+                    // Common logic for expanding/collapsing folder visuals
+                    if (isFolder) {
+                        const subList = newItemDiv.nextElementSibling; // UL is sibling of the div
+                        if (subList && subList.tagName === 'UL') {
+                            subList.classList.toggle('hidden'); 
+                            if (iconElement) { // Toggle folder icon
+                                iconElement.classList.toggle('fa-folder-open');
+                                iconElement.classList.toggle('fa-folder');
+                            }
+                        }
+                    }
+
+                    const folderId = itemName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''); // Sanitize name for ID
+                        openTab(`文献管理`, `literature_management.html?folder=${encodeURIComponent(folderId)}`);
+
+                    
+
+                    if (isFlyout && sidebarFlyout) { 
+                        sidebarFlyout.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        if (collapsedFolderBtn && sidebarFlyout && mainTreeNav) {
+            collapsedFolderBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (sidebar.classList.contains('w-16')) { // Only if sidebar is collapsed
+                    const flyoutTreeContent = document.getElementById('flyout-tree-content');
+                    if (sidebarFlyout.classList.contains('hidden')) {
+                        flyoutTreeContent.innerHTML = ''; 
+                        const clonedTree = mainTreeNav.cloneNode(true); 
+                        flyoutTreeContent.appendChild(clonedTree);
+                        addListenersToTreeItems(clonedTree, true); // CRITICAL: Attach listeners to the cloned tree
+                        sidebarFlyout.classList.remove('hidden');
+                    } else {
+                        sidebarFlyout.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        // --- END OF Sidebar Flyout Logic ---
+
+
+        // Initial setup calls
+        if (mainTreeNav) {
+            addListenersToTreeItems(mainTreeNav, false); // Attach listeners to the main tree on initial load
+        }
 
     </script>
 </body>
