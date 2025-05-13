@@ -7,27 +7,44 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* (Similar styles as results_management.html for consistency) */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
         .table-fixed-layout { table-layout: fixed; }
-        .action-menu { position: absolute; right: 0; top: 100%; margin-top: 0.25rem; z-index: 20; }
+        .action-menu {
+            position: absolute;
+            right: 0;
+            top: 100%; /* Position below the toggle button */
+            margin-top: 0.25rem; /* 4px */
+            z-index: 20; /* Ensure it's above table content */
+        }
         .status-badge { padding: 0.25rem 0.6rem; font-size: 0.75rem; border-radius: 9999px; font-weight: 500; }
-        .status-unprocessed { background-color: #f3f4f6; color: #4b5563; } /* gray-100, gray-600 */
-        .status-processing { background-color: #fef3c7; color: #b45309; } /* amber-100, amber-700 */
-        .status-analyzed { background-color: #d1fae5; color: #047857; } /* green-100, green-700 */
-        .status-error { background-color: #fee2e2; color: #b91c1c; } /* red-100, red-700 */
+        .status-unprocessed { background-color: #f3f4f6; color: #4b5563; } 
+        .status-processing { background-color: #fef3c7; color: #b45309; } 
+        .status-analyzed { background-color: #d1fae5; color: #047857; } 
+        .status-error { background-color: #fee2e2; color: #b91c1c; } 
+        .conditional-btn { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, visibility 0.3s; }
+        .truncate-2-lines {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans p-4 md:p-6">
     <div class="container mx-auto">
-        <header class="mb-6 flex justify-between items-center">
+        <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 class="text-2xl font-semibold text-slate-800">文献管理</h1>
-            <button id="upload-literature-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center text-sm shadow-md">
-                <i class="fas fa-upload mr-2"></i> 上传文献
-            </button>
+            <div class="flex items-center space-x-2 flex-wrap gap-y-2">
+                <button id="batch-analysis-btn" class="conditional-btn hidden opacity-0 transform scale-95 px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center"><i class="fas fa-cogs mr-1.5"></i> 批量调研</button>
+                <button id="comprehensive-analysis-btn" class="conditional-btn hidden opacity-0 transform scale-95 px-3 py-2 text-sm bg-indigo-500 text-white rounded-md hover:bg-indigo-600 flex items-center"><i class="fas fa-microscope mr-1.5"></i> 综合调研</button>
+                <button id="upload-literature-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 text-sm rounded-md flex items-center shadow-sm"> 
+                    <i class="fas fa-upload mr-2"></i> 上传文献
+                </button>
+            </div>
         </header>
 
         <div class="bg-white p-4 sm:p-6 rounded-lg shadow mb-6">
@@ -35,7 +52,7 @@
                 <div>
                     <label for="search-literature" class="block text-sm font-medium text-slate-700 mb-1">搜索文献</label>
                     <div class="relative">
-                        <input type="text" id="search-literature" placeholder="按标题、来源搜索..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+                        <input type="text" id="search-literature" placeholder="标题、作者、关键词..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
                         <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
                     </div>
                 </div>
@@ -46,6 +63,9 @@
                         <option value="IBD">IBD</option>
                         <option value="药材">药材</option>
                         <option value="临床研究">临床研究</option>
+                        <option value="综述">综述</option>
+                        <option value="化学">化学</option>
+                        <option value="药理">药理</option>
                     </select>
                 </div>
                  <div>
@@ -62,14 +82,16 @@
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-x-auto custom-scrollbar">
-            <table class="w-full min-w-[1000px] text-sm text-left text-slate-500 table-fixed-layout">
+            <table class="w-full min-w-[1200px] text-sm text-left text-slate-500 table-fixed-layout">
                 <thead class="text-xs text-slate-700 uppercase bg-slate-50">
                     <tr>
-                        <th scope="col" class="p-3 w-12"><input type="checkbox" id="select-all-literature" class="form-checkbox h-4 w-4 text-blue-600"></th>
-                        <th scope="col" class="p-3 w-1/6">标题</th>
-                        <th scope="col" class="p-3 w-1/6">来源</th>
-                        <th scope="col" class="p-3 w-1/6">上传日期</th>
-                        <th scope="col" class="p-3 w-1/6">标签</th>
+                        <th scope="col" class="p-3 w-12"><input type="checkbox" id="select-all-literature" class="form-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded"></th>
+                        <th scope="col" class="p-3 w-[20%]">标题</th>
+                        <th scope="col" class="p-3 w-[12%]">作者</th>
+                        <th scope="col" class="p-3 w-[15%]">关键词</th>
+                        <th scope="col" class="p-3 w-[12%]">来源</th>
+                        <th scope="col" class="p-3 w-[10%]">上传日期</th>
+                        <th scope="col" class="p-3 w-[12%]">标签</th>
                         <th scope="col" class="p-3 w-24">状态</th>
                         <th scope="col" class="p-3 w-28 text-center">操作</th>
                     </tr>
@@ -87,18 +109,24 @@
 
     <script>
         const mockLiteratureData = [
-            { id: "lit001", title: "IBD最新研究进展.pdf", source: "PubMed", uploadDate: "2024-03-10", tags: ["IBD", "综述"], status: "analyzed", originalDocUrl: "sample_doc1.pdf" },
-            { id: "lit002", title: "白芍化学成分分析.docx", source: "CNKI", uploadDate: "2024-03-12", tags: ["药材", "白芍", "化学"], status: "processing", originalDocUrl: "sample_doc2.pdf" },
-            { id: "lit003", title: "炎症性肠病治疗靶点研究.pdf", source: "Elsevier", uploadDate: "2024-02-20", tags: ["IBD", "药靶"], status: "unprocessed", originalDocUrl: "sample_doc3.pdf" },
-            { id: "lit004", title: "北豆根药理作用探讨.pdf", source: "Springer", uploadDate: "2024-01-15", tags: ["药材", "北豆根"], status: "analyzed", originalDocUrl: "sample_doc4.pdf" },
-            { id: "lit005", title: "巴豆临床应用安全性评估.pdf", source: "Local Upload", uploadDate: "2023-12-01", tags: ["药材", "巴豆", "临床"], status: "error", originalDocUrl: "sample_doc5.pdf" },
+            { id: "lit001", title: "IBD最新研究进展与未来展望.pdf", authors: "王明, 李静", keywords: ["炎症性肠病", "治疗", "靶点", "免疫"], source: "中华医学杂志", uploadDate: "2024-03-10", tags: ["IBD", "综述"], status: "analyzed", originalDocUrl: "sample_doc1.pdf", articleType: "综述文章", publishYear: "2024", volume: "104", issue: "5", impactFactor: "3.567", doi: "10.3760/cma.j.cn112137-20231010-00123", abstractText: "炎症性肠病（IBD）是一组慢性、复发性肠道炎症性疾病...", citationsText: "Baumgart DC, Sandborn WJ. Crohn's disease. Lancet. 2012" },
+            { id: "lit002", title: "白芍化学成分及其抗炎活性研究.docx", authors: "张伟", keywords: ["白芍", "芍药苷", "抗炎", "天然产物"], source: "中草药", uploadDate: "2024-03-12", tags: ["药材", "白芍", "化学"], status: "processing", originalDocUrl: "sample_doc2.pdf", articleType: "研究原著", publishYear: "2023", volume: "54", issue: "10", impactFactor: "1.892", doi: "10.7501/j.issn.0253-2670.2023.10.00x", abstractText: "目的：研究白芍的化学成分及其主要成分的抗炎活性...", citationsText: "He X, Bai Y. Paeoniflorin: a review of its pharmacology. Fitoterapia. 2011" },
+            { id: "lit003", title: "炎症性肠病治疗靶点研究新进展.pdf", authors: "赵敏, 孙悦", keywords: ["IBD", "JAK抑制剂", "生物制剂"], source: "Elsevier - Journal of Crohn's and Colitis", uploadDate: "2024-02-20", tags: ["IBD", "药靶"], status: "unprocessed", originalDocUrl: "sample_doc3.pdf", articleType: "研究论文", publishYear: "2024", volume: "18", issue: "2", impactFactor: "9.071", doi: "10.1093/ecco-jcc/jjad180", abstractText: "Janus激酶（JAK）抑制剂作为一种新型口服小分子药物...", citationsText: "Torres J, et al. Lancet. 2017" },
+            { id: "lit004", title: "北豆根主要生物碱的药理作用探讨.pdf", authors: "周强", keywords: ["北豆根", "生物碱", "镇咳", "祛痰"], source: "Springer - Phytomedicine", uploadDate: "2024-01-15", tags: ["药材", "北豆根", "药理"], status: "analyzed", originalDocUrl: "sample_doc4.pdf", articleType: "实验研究", publishYear: "2023", volume: "110", issue: "", impactFactor: "6.656", doi: "10.1016/j.phymed.2022.154501", abstractText: "北豆根为防己科植物蝙蝠葛的干燥根茎...", citationsText: "《中华人民共和国药典》2020年版" },
+            { id: "lit005", title: "巴豆在现代临床中的应用及其安全性评估.pdf", authors: "吴刚, 陈晨", keywords: ["巴豆", "泻下", "毒性", "临床应用"], source: "医药导报", uploadDate: "2023-12-01", tags: ["药材", "巴豆", "临床研究"], status: "error", originalDocUrl: "sample_doc5.pdf", articleType: "临床报告", publishYear: "2022", volume: "41", issue: "S1", impactFactor: "0.985", doi: "10.3802/j.issn.1004-0781.2022.S1.xx", abstractText: "巴豆作为一种传统中药，具有峻下冷积、逐水退肿的功效...", citationsText: "国家药典委员会. 中华人民共和国药典临床用药须知:中药饮片卷. 2020." },
         ];
 
         const literatureTableBody = document.getElementById('literature-table-body');
         const litPaginationControls = document.getElementById('lit-pagination-controls');
+        const tagFilterLitSelect = document.getElementById('tag-filter-lit');
+        const batchAnalysisBtn = document.getElementById('batch-analysis-btn');
+        const comprehensiveAnalysisBtn = document.getElementById('comprehensive-analysis-btn');
+
         const itemsPerPageLit = 10;
         let currentPageLit = 1;
-        // Add filter state variables if needed
+        let currentLitSearchTerm = '';
+        let currentLitTagFilter = '';
+        let currentLitStatusFilter = '';
 
         function getLitStatusBadge(status) {
             switch (status) {
@@ -109,62 +137,87 @@
                 default: return `<span class="status-badge">${status}</span>`;
             }
         }
-
         function openLiteratureResearch(literatureId, literatureTitle) {
-            if (window.parent && window.parent.openTab) {
-                window.parent.openTab(`文献: ${literatureTitle.substring(0,20)}...`, `literature_research.html?id=${encodeURIComponent(literatureId)}`);
+             if (window.parent && window.parent.openTab) {
+                window.parent.openTab(`文献调研: ${literatureTitle.substring(0,15)}...`, `literature_research.html?id=${encodeURIComponent(literatureId)}`);
             } else {
                 window.location.href = `literature_research.html?id=${encodeURIComponent(literatureId)}`;
             }
         }
+        function openLiteratureInfoDetail(literatureId, literatureTitle) {
+             if (window.parent && window.parent.openTab) {
+                window.parent.openTab(`文献信息: ${literatureTitle.substring(0,15)}...`, `literature_info_detail.html?id=${encodeURIComponent(literatureId)}`);
+            } else {
+                window.location.href = `literature_info_detail.html?id=${encodeURIComponent(literatureId)}`;
+            }
+        }
 
         function renderLitTable() {
+            console.log('开始渲染表格');
+            console.log('Mock数据:', mockLiteratureData);
+            console.log('当前搜索词:', currentLitSearchTerm);
+            console.log('当前标签过滤:', currentLitTagFilter);
+            console.log('当前状态过滤:', currentLitStatusFilter);
+            
             literatureTableBody.innerHTML = '';
-            // Implement filtering and search later if needed, for now, just pagination
-            const paginatedData = mockLiteratureData.slice((currentPageLit - 1) * itemsPerPageLit, currentPageLit * itemsPerPageLit);
+            const filteredData = mockLiteratureData.filter(item => {
+                const matchesSearch = currentLitSearchTerm === '' || 
+                                    item.title.toLowerCase().includes(currentLitSearchTerm.toLowerCase()) ||
+                                    item.authors.toLowerCase().includes(currentLitSearchTerm.toLowerCase()) ||
+                                    item.keywords.some(k => k.toLowerCase().includes(currentLitSearchTerm.toLowerCase()));
+                const matchesTag = currentLitTagFilter === '' || item.tags.includes(currentLitTagFilter);
+                const matchesStatus = currentLitStatusFilter === '' || item.status === currentLitStatusFilter;
+                return matchesSearch && matchesTag && matchesStatus;
+            });
+
+            const paginatedData = filteredData.slice((currentPageLit - 1) * itemsPerPageLit, currentPageLit * itemsPerPageLit);
 
             if (paginatedData.length === 0) {
-                literatureTableBody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-slate-500">没有文献记录。</td></tr>`;
+                literatureTableBody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-slate-500">没有符合条件的文献记录。</td></tr>`;
                 renderLitPagination(0);
                 return;
             }
 
             paginatedData.forEach(item => {
+                const escapedTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 const row = `
                     <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="p-3"><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600"></td>
-                        <td class="p-3 font-medium text-slate-900 hover:text-blue-600 cursor-pointer truncate" title="${item.title}" onclick="openLiteratureResearch('${item.id}', '${item.title.replace(/'/g, "\\'")}')">${item.title}</td>
+                        <td class="p-3"><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded"></td>
+                        <td class="p-3 font-medium text-slate-900 hover:text-blue-600 cursor-pointer truncate" title="${item.title}" onclick="openLiteratureResearch('${item.id}', '${escapedTitle}')">${item.title}</td>
+                        <td class="p-3 text-slate-600 truncate" title="${item.authors}">${item.authors}</td>
+                        <td class="p-3 text-slate-600 truncate-2-lines" title="${item.keywords.join(', ')}">${item.keywords.join(', ')}</td>
                         <td class="p-3 text-slate-600 truncate" title="${item.source}">${item.source}</td>
                         <td class="p-3 text-slate-600">${item.uploadDate}</td>
-                        <td class="p-3 text-slate-600 truncate">${item.tags.join(', ')}</td>
+                        <td class="p-3 text-slate-600 truncate" title="${item.tags.join(', ')}">${item.tags.join(', ')}</td>
                         <td class="p-3">${getLitStatusBadge(item.status)}</td>
                         <td class="p-3 text-center relative">
                             <button class="text-blue-600 hover:text-blue-800 lit-action-toggle"><i class="fas fa-ellipsis-v"></i></button>
-                            <div class="action-menu hidden bg-white border border-slate-200 rounded-md shadow-lg py-1 w-28">
-                                <a href="#" onclick="openLiteratureResearch('${item.id}', '${item.title.replace(/'/g, "\\'")}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">开始调研</a>
-                                <a href="#" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">下载原文</a>
-                                <a href="#" class="block px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">删除</a>
+                            <div class="action-menu hidden bg-white border border-slate-200 rounded-md shadow-lg py-1 w-32">
+                                <a href="#" onclick="openLiteratureResearch('${item.id}', '${escapedTitle}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">开始调研</a>
+                                <a href="#" onclick="openLiteratureInfoDetail('${item.id}', '${escapedTitle}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">查看详情</a>
+                                <a href="#" onclick="alert('下载 ${escapedTitle} (占位)')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">下载原文</a>
+                                <div class="my-1 border-t border-slate-100"></div>
+                                <a href="#" onclick="alert('删除 ${escapedTitle} (占位)')" class="block px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">删除文献</a>
                             </div>
                         </td>
                     </tr>
                 `;
                 literatureTableBody.innerHTML += row;
             });
-            renderLitPagination(mockLiteratureData.length);
+            renderLitPagination(filteredData.length);
             attachLitActionMenuListeners();
         }
 
         function renderLitPagination(totalItems) {
-            // ... (Similar to results_management.html pagination)
             litPaginationControls.innerHTML = '';
             const totalPages = Math.ceil(totalItems / itemsPerPageLit);
             if (totalPages <= 1) return;
 
-            litPaginationControls.innerHTML += `<button data-page="${currentPageLit - 1}" class="px-3 py-1 text-sm rounded-md ${currentPageLit === 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPageLit === 1 ? 'disabled' : ''}>&lt; Previous</button>`;
+            litPaginationControls.innerHTML += `<button data-page="${currentPageLit - 1}" class="px-3 py-1 text-sm rounded-md ${currentPageLit === 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPageLit === 1 ? 'disabled' : ''}>< Previous</button>`;
             for (let i = 1; i <= totalPages; i++) {
                 litPaginationControls.innerHTML += `<button data-page="${i}" class="px-3 py-1 text-sm rounded-md ${i === currentPageLit ? 'bg-blue-500 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}">${i}</button>`;
             }
-            litPaginationControls.innerHTML += `<button data-page="${currentPageLit + 1}" class="px-3 py-1 text-sm rounded-md ${currentPageLit === totalPages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPageLit === totalPages ? 'disabled' : ''}>Next &gt;</button>`;
+            litPaginationControls.innerHTML += `<button data-page="${currentPageLit + 1}" class="px-3 py-1 text-sm rounded-md ${currentPageLit === totalPages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPageLit === totalPages ? 'disabled' : ''}>Next ></button>`;
             
             document.querySelectorAll('#lit-pagination-controls button[data-page]').forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -173,9 +226,13 @@
                 });
             });
         }
-         function attachLitActionMenuListeners() {
+        
+        function attachLitActionMenuListeners() {
             document.querySelectorAll('.lit-action-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function(event) {
+                // Simple re-attachment by removing old and adding new
+                const newToggle = toggle.cloneNode(true);
+                toggle.parentNode.replaceChild(newToggle, toggle);
+                newToggle.addEventListener('click', function(event) {
                     event.stopPropagation();
                     document.querySelectorAll('.action-menu').forEach(m => {
                         if (m !== this.nextElementSibling) m.classList.add('hidden');
@@ -184,15 +241,67 @@
                 });
             });
         }
+        
         document.addEventListener('click', (event) => {
             if (!event.target.closest('.lit-action-toggle') && !event.target.closest('.action-menu')) {
                 document.querySelectorAll('.action-menu').forEach(menu => menu.classList.add('hidden'));
             }
         });
 
+        document.getElementById('search-literature').addEventListener('input', (e) => {
+            currentLitSearchTerm = e.target.value;
+            currentPageLit = 1;
+            renderLitTable();
+        });
+        document.getElementById('status-filter-lit').addEventListener('change', (e) => {
+            currentLitStatusFilter = e.target.value;
+            currentPageLit = 1;
+            renderLitTable();
+        });
 
-        // Initial Render
-        renderLitTable();
+        tagFilterLitSelect.addEventListener('change', (e) => {
+            currentLitTagFilter = e.target.value;
+            currentPageLit = 1;
+            renderLitTable();
+            showHideAnalysisButtons();
+        });
+
+        function showHideAnalysisButtons() {
+            if (currentLitTagFilter && currentLitTagFilter !== "") {
+                // 显示按钮
+                [batchAnalysisBtn, comprehensiveAnalysisBtn].forEach(btn => {
+                    btn.classList.remove('hidden');
+                    setTimeout(() => {
+                        btn.classList.remove('opacity-0', 'scale-95');
+                        btn.classList.add('opacity-100', 'scale-100');
+                    }, 50);
+                });
+            } else {
+                // 隐藏按钮
+                [batchAnalysisBtn, comprehensiveAnalysisBtn].forEach(btn => {
+                    btn.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => {
+                        btn.classList.add('hidden');
+                    }, 300);
+                });
+            }
+        }
+
+        batchAnalysisBtn.addEventListener('click', () => alert(`对标签 "${currentLitTagFilter}" 下的文献进行批量调研 (占位)`));
+        comprehensiveAnalysisBtn.addEventListener('click', () => alert(`对标签 "${currentLitTagFilter}" 下的文献进行综合调研 (占位)`));
+
+        // 初始化表格和按钮状态
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，开始初始化表格');
+            renderLitTable();
+            showHideAnalysisButtons();
+        });
+
+        // 监听复选框变化
+        document.getElementById('select-all-literature').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        });
     </script>
 </body>
 </html>

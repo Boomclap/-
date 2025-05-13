@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文献信息详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .detail-label {
+            font-weight: 500; /* medium */
+            color: #4b5563; /* gray-600 */
+        }
+        .detail-value {
+            color: #1f2937; /* gray-800 */
+            word-break: break-word;
+        }
+        .section-title {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #1e293b; /* slate-800 */
+            padding-bottom: 0.5rem; /* pb-2 */
+            border-bottom: 1px solid #e2e8f0; /* border-slate-200 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .grid-info-item {
+            padding-bottom: 0.5rem; /* pb-2 */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans p-4 md:p-6">
+    <div class="container mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-xl">
+        <header class="mb-6 pb-4 border-b border-slate-200">
+            <h1 id="lit-info-title" class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 leading-tight" title="加载中...">加载中...</h1>
+            <p id="lit-info-authors" class="text-md text-slate-600">作者: 加载中...</p>
+        </header>
+
+        <div>
+            <h2 class="section-title">基本信息</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm mb-6">
+                <div class="grid-info-item"><span class="detail-label">来源 (期刊/会议): </span><span id="lit-info-source" class="detail-value"></span></div>
+                <div class="grid-info-item"><span class="detail-label">文章类型: </span><span id="lit-info-type" class="detail-value"></span></div>
+                <div class="grid-info-item"><span class="detail-label">发表年份: </span><span id="lit-info-year" class="detail-value"></span></div>
+                <div class="grid-info-item"><span class="detail-label">卷号: </span><span id="lit-info-volume" class="detail-value"></span></div>
+                <div class="grid-info-item"><span class="detail-label">期号: </span><span id="lit-info-issue" class="detail-value"></span></div>
+                <div class="grid-info-item"><span class="detail-label">影响因子 (IF): </span><span id="lit-info-if" class="detail-value"></span></div>
+                <div class="grid-info-item md:col-span-2 lg:col-span-3"><span class="detail-label">DOI: </span><a href="#" id="lit-info-doi" target="_blank" class="detail-value text-blue-600 hover:underline"></a></div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="section-title">标签与关键词</h2>
+            <div class="mb-4">
+                <p class="detail-label mb-1">文献标签:</p>
+                <div id="lit-info-tags" class="flex flex-wrap gap-2">
+                    <span class="bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-full italic">加载中...</span>
+                </div>
+            </div>
+            <div>
+                <p class="detail-label mb-1">关键词:</p>
+                <div id="lit-info-keywords" class="flex flex-wrap gap-2">
+                    <span class="bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-full italic">加载中...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <h2 class="section-title">摘要</h2>
+            <p id="lit-info-abstract" class="text-sm text-slate-700 leading-relaxed whitespace-pre-line"></p>
+        </div>
+        
+        <div class="mt-6">
+            <h2 class="section-title">操作</h2>
+             <a href="#" id="lit-info-download" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 hover:underline py-2">
+                <i class="fas fa-download mr-2"></i><span id="lit-info-download-text">下载原文</span>
+            </a>
+        </div>
+
+        <div class="mt-6">
+            <h2 class="section-title">引文 (部分示例)</h2>
+            <ul id="lit-info-citations" class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                <li class="italic text-slate-400">加载中...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mock data (expanded from literature_management.html's mock)
+        const mockLiteratureFullDetails = {
+            "lit001": {
+                title: "IBD最新研究进展与未来展望.pdf", authors: "王明, 李静, 张三丰", source: "中华医学杂志", type: "综述文章",
+                tags: ["IBD", "综述", "医学前沿"], year: "2024", volume: "104", issue: "5", impactFactor: "3.567",
+                keywords: ["炎症性肠病", "治疗进展", "靶向治疗", "免疫调节", "微生物群"],
+                abstractText: "炎症性肠病（IBD）是一组慢性、复发性肠道炎症性疾病，主要包括克罗恩病（CD）和溃疡性结肠炎（UC）。近年来，随着对IBD发病机制认识的深入，新的治疗靶点和药物不断涌现，为IBD患者带来了新的希望。本文就IBD的流行病学、发病机制、诊断以及治疗（包括传统药物、生物制剂、小分子药物及细胞治疗等）的最新研究进展进行综述，并对未来研究方向和治疗策略进行展望，旨在为临床医生和研究人员提供参考。",
+                doi: "10.3760/cma.j.cn112137-20231010-00123", downloadUrl: "sample_doc1.pdf", 
+                citationsText: ["Baumgart DC, Sandborn WJ. Crohn's disease. Lancet. 2012;380(9853):1590-1605.", "Ordás I, Eckmann L, Talamini M, Baumgart DC, Sandborn WJ. Ulcerative colitis. Lancet. 2012;380(9853):1606-1619."] // Changed to array
+            },
+            "lit002": {
+                title: "白芍化学成分及其抗炎活性研究.docx", authors: "张伟, 李娜", source: "中草药", type: "研究原著",
+                tags: ["药材", "白芍", "化学", "抗炎"], year: "2023", volume: "54", issue: "10", impactFactor: "1.892",
+                keywords: ["白芍", "芍药苷", "没食子酰芍药苷", "抗炎活性", "NF-κB"],
+                abstractText: "目的：研究白芍的化学成分及其主要成分的抗炎活性。方法：采用多种色谱技术分离纯化白芍中的化学成分，并通过波谱数据鉴定其结构；建立LPS诱导的RAW264.7细胞炎症模型，评价主要成分的抗炎活性。结果：从白芍中分离得到10个化合物...结论：白芍具有良好的抗炎作用物质基础。",
+                doi: "10.7501/j.issn.0253-2670.2023.10.00x", downloadUrl: "sample_doc2.pdf",
+                citationsText: ["He X, Bai Y. Paeoniflorin: a review of its pharmacology. Fitoterapia. 2011;82(7):1035-40.", "Cao Y, Yu R, Zhang L, et al. Anti-inflammatory effects of paeoniflorin. Eur J Pharmacol. 2019;855:90-100."]
+            },
+             // Add full details for lit003, lit004, lit005 if needed for testing this page directly
+            "lit003": { title: "炎症性肠病治疗靶点研究新进展.pdf", authors: "赵敏, 孙悦", keywords: ["IBD", "JAK抑制剂"], source: "Elsevier", uploadDate: "2024-02-20", tags: ["IBD", "药靶"], articleType: "研究论文", publishYear: "2024", volume: "18", issue: "2", impactFactor: "9.071", doi: "10.1093/ecco-jcc/jjad180", abstractText: "Janus激酶（JAK）抑制剂作为一种新型口服小分子药物...", citationsText: ["Torres J, et al. Lancet. 2017"] },
+
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const literatureId = urlParams.get('id');
+            const data = mockLiteratureFullDetails[literatureId];
+
+            if (data) {
+                document.getElementById('lit-info-title').textContent = data.title;
+                document.getElementById('lit-info-title').title = data.title; // For full title on hover
+                document.getElementById('lit-info-authors').textContent = `作者: ${data.authors || 'N/A'}`;
+                document.getElementById('lit-info-source').textContent = data.source || 'N/A';
+                document.getElementById('lit-info-type').textContent = data.type || data.articleType || 'N/A'; // Added fallback
+                document.getElementById('lit-info-year').textContent = data.year || data.publishYear || 'N/A'; // Added fallback
+                document.getElementById('lit-info-volume').textContent = data.volume || 'N/A';
+                document.getElementById('lit-info-issue').textContent = data.issue || 'N/A';
+                document.getElementById('lit-info-if').textContent = data.impactFactor || 'N/A';
+                
+                const doiEl = document.getElementById('lit-info-doi');
+                doiEl.textContent = data.doi || 'N/A';
+                if (data.doi) {
+                    doiEl.href = `https://doi.org/${data.doi}`;
+                    doiEl.classList.add('text-blue-600', 'hover:underline');
+                } else {
+                    doiEl.removeAttribute('href');
+                     doiEl.classList.remove('text-blue-600', 'hover:underline');
+                }
+
+                const tagsContainer = document.getElementById('lit-info-tags');
+                tagsContainer.innerHTML = '';
+                (data.tags || []).forEach(tag => {
+                    tagsContainer.innerHTML += `<span class="bg-sky-100 text-sky-700 text-xs font-medium px-2.5 py-1 rounded-full mr-1.5 mb-1.5 inline-block">${tag}</span>`;
+                });
+                if (tagsContainer.innerHTML === '') tagsContainer.innerHTML = `<span class="italic text-slate-500">无标签</span>`;
+
+                const keywordsContainer = document.getElementById('lit-info-keywords');
+                keywordsContainer.innerHTML = '';
+                (data.keywords || []).forEach(kw => {
+                    keywordsContainer.innerHTML += `<span class="bg-slate-200 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-full mr-1.5 mb-1.5 inline-block">${kw}</span>`;
+                });
+                 if (keywordsContainer.innerHTML === '') keywordsContainer.innerHTML = `<span class="italic text-slate-500">无关键词</span>`;
+
+                document.getElementById('lit-info-abstract').textContent = data.abstractText || '摘要信息不可用。';
+                
+                const downloadLinkEl = document.getElementById('lit-info-download');
+                const downloadLinkTextEl = document.getElementById('lit-info-download-text');
+                if (data.downloadUrl) {
+                    downloadLinkEl.href = data.downloadUrl;
+                    downloadLinkTextEl.textContent = '下载原文文件'; // Or the filename: data.title
+                    downloadLinkEl.classList.remove('hidden');
+                } else {
+                    downloadLinkTextEl.textContent = '下载链接不可用';
+                    downloadLinkEl.removeAttribute('href');
+                    downloadLinkEl.classList.add('text-slate-400', 'pointer-events-none');
+                    downloadLinkEl.classList.remove('text-blue-600', 'hover:text-blue-700', 'hover:underline');
+                }
+
+                const citationsListEl = document.getElementById('lit-info-citations');
+                citationsListEl.innerHTML = '';
+                if (data.citationsText && Array.isArray(data.citationsText) && data.citationsText.length > 0) {
+                    data.citationsText.forEach(citation => {
+                        const li = document.createElement('li');
+                        li.textContent = citation;
+                        citationsListEl.appendChild(li);
+                    });
+                } else if (typeof data.citationsText === 'string' && data.citationsText.trim() !== '') { // Handle if it's a single string
+                    const li = document.createElement('li');
+                    li.textContent = data.citationsText;
+                    citationsListEl.appendChild(li);
+                } else {
+                    citationsListEl.innerHTML = `<li class="italic text-slate-400">引文信息不可用或暂无。</li>`;
+                }
+
+            } else {
+                document.getElementById('lit-info-title').textContent = "文献信息未找到";
+                document.getElementById('lit-info-title').title = "文献信息未找到";
+                // Clear or hide other fields
+                ['lit-info-authors', 'lit-info-source', 'lit-info-type', 'lit-info-year', 'lit-info-volume', 'lit-info-issue', 'lit-info-if', 'lit-info-doi', 'lit-info-tags', 'lit-info-keywords', 'lit-info-abstract', 'lit-info-citations'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = 'N/A';
+                });
+                 const downloadLinkEl = document.getElementById('lit-info-download');
+                 downloadLinkEl.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
