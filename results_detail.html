@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>结果详情</title>
+    <title>结果详情 - 信息溯源</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -16,9 +16,101 @@
         .status-approved { background-color: #d1fae5; color: #047857; }
         .status-rejected { background-color: #fee2e2; color: #b91c1c; }
         .version-item.active { background-color: #e0f2fe; border-left-color: #0ea5e9; }
-        .result-content-display { white-space: pre-wrap; word-wrap: break-word; }
-        #original-doc-iframe { min-height: calc(100vh - 150px); /* Adjust as needed */ }
+        .result-content-display { white-space: pre-wrap; word-wrap: break-word; line-height: 1.7; }
+        #original-doc-iframe { min-height: calc(100vh - 150px); } /* Ensure iframe takes height */
         .pane-transition { transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+
+        .inferred-highlight {
+            /* Optional: Subtle background for the text part if desired */
+            /* background-color: rgba(230, 247, 255, 0.3); 
+            padding: 0 1px; 
+            border-radius: 2px; */
+        }
+        .source-indicator {
+            display: inline-block;
+            position: relative; 
+            margin-left: 0.15rem; /* Reduced space */
+            margin-right: 0.1rem;
+            cursor: pointer;
+            padding: 0px 3px; /* Minimal padding for icon */
+            border-radius: 3px;
+            vertical-align: middle; /* Align icon better with text */
+        }
+        .source-indicator:hover, .source-indicator:focus-visible { /* Added focus-visible */
+            background-color: #e2e8f0; /* slate-200 */
+            outline: none; /* Remove default focus outline if using custom */
+        }
+        .source-indicator .fas { 
+            font-size: 0.85em; /* Slightly larger icon */
+            vertical-align: baseline; /* Align icon better */
+        }
+        .indicator-tooltip {
+            visibility: hidden;
+            width: 300px; /* Increased width */
+            background-color: #1f2937; /* Tailwind gray-800 */
+            color: #f9fafb; /* Tailwind gray-50 */
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 150%; /* Further up */
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            font-size: 0.78rem; /* Adjusted font size */
+            line-height: 1.5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            pointer-events: none; 
+        }
+        .source-indicator:hover .indicator-tooltip,
+        .source-indicator:focus-visible .indicator-tooltip { /* Show on keyboard focus */
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto; /* Allow interaction with links inside */
+        }
+        .indicator-tooltip::after { 
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .indicator-tooltip strong { color: #9ca3af; /* Tailwind gray-400 */ display: block; margin-bottom: 2px;}
+        .indicator-tooltip a { color: #60a5fa; /* Tailwind blue-400 */ text-decoration: underline; }
+        .indicator-tooltip a:hover { color: #93c5fd; /* Tailwind blue-300 */ }
+
+        .pdf-highlight-overlay {
+            position: absolute;
+            background-color: rgba(255, 235, 59, 0.35); 
+            border: 1.5px solid #FBC02D; 
+            box-sizing: border-box;
+            pointer-events: none; 
+            z-index: 5; 
+            transition: all 0.2s ease-out;
+            border-radius: 2px;
+        }
+        .pdf-page-indicator { 
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.65);
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            z-index: 6;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        #right-pane:hover .pdf-page-indicator.visible-indicator {
+             opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans">
@@ -26,10 +118,9 @@
         <header class="bg-white shadow-sm p-3 border-b border-slate-200 flex-shrink-0">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center min-w-0">
-                    <h1 id="result-main-title" class="text-lg font-semibold text-slate-800 truncate mr-4">结果详情: 加载中...</h1>
+                    <h1 id="result-main-title" class="text-lg font-semibold text-slate-800 truncate mr-4" title="结果详情: 加载中...">结果详情: 加载中...</h1>
                 </div>
                 <div class="flex items-center space-x-2" id="header-actions-buttons">
-                    <!-- Main action buttons will be populated here by updateMainActions -->
                     <button id="toggle-original-doc-btn" title="切换原始文献显隐" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
                         <i class="fas fa-eye-slash mr-1.5"></i> <span id="toggle-doc-text">隐藏原文</span>
                     </button>
@@ -38,19 +129,20 @@
         </header>
 
         <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-3 gap-3">
-            <!-- Left Pane: Result Content & History -->
             <div id="left-pane" class="w-full md:w-1/2 flex flex-col bg-white rounded-lg shadow overflow-hidden pane-transition">
                 <div class="p-4 border-b border-slate-200 flex-shrink-0">
                     <div class="flex justify-between items-center mb-1">
-                        <h2 class="text-base font-semibold text-slate-700">结果内容</h2>
+                        <h2 class="text-base font-semibold text-slate-700">结果内容 
+                            <span class="text-xs text-slate-400 font-normal">(点击<i class="fas fa-map-marker-alt text-blue-500"></i><i class="fas fa-link text-green-500 mx-0.5"></i><i class="fas fa-lightbulb text-orange-500"></i>图标查看来源)</span>
+                        </h2>
                         <span id="result-status-badge" class="status-badge-lg">加载中</span>
                     </div>
                     <p id="result-version-info" class="text-xs text-slate-500">版本: - | 更新: -</p>
                 </div>
 
                 <div id="result-content-area" class="p-4 flex-grow overflow-y-auto custom-scrollbar">
-                    <pre id="result-text-display" class="text-sm text-slate-700 result-content-display">加载中...</pre>
-                    <textarea id="result-text-edit" class="hidden w-full h-full text-sm border border-slate-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 custom-scrollbar" rows="10"></textarea>
+                    <div id="result-text-display" class="text-sm text-slate-700 result-content-display">加载中...</div>
+                    <textarea id="result-text-edit" class="hidden w-full h-full text-sm border border-slate-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500 custom-scrollbar" rows="10" placeholder="在此编辑结果内容。使用 [[文本内容|source:类型,键:值,...]] 格式添加溯源信息。\n例如：[[白芍总苷具有抗炎作用|source:doc,page:2,rect:50,100,200,30]] 或 [[外部研究|source:url,link:https://example.com]] 或 [[结论|source:reason,text:综合分析得出]]"></textarea>
                 </div>
                 
                 <div id="edit-specific-actions" class="p-3 border-t border-slate-200 bg-slate-50 hidden flex-shrink-0">
@@ -72,59 +164,43 @@
                     </ul>
                 </div>
             </div>
-
-            <!-- Right Pane: Original Document -->
-            <div id="right-pane" class="w-full md:w-1/2 bg-white rounded-lg shadow overflow-hidden flex flex-col pane-transition">
+            <div id="right-pane" class="w-full md:w-1/2 bg-white rounded-lg shadow overflow-hidden flex flex-col pane-transition relative">
                 <div class="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
                     <h2 class="text-base font-semibold text-slate-700">原始文献</h2>
-                    <div class="text-xs text-slate-500">
-                        <button title="上一页" class="px-2 py-1 hover:bg-slate-200 rounded-md"><i class="fas fa-chevron-left"></i></button>
-                        <span><span id="pdf-current-page">1</span> / <span id="pdf-total-pages">1</span></span>
-                        <button title="下一页" class="px-2 py-1 hover:bg-slate-200 rounded-md"><i class="fas fa-chevron-right"></i></button>
-                    </div>
                 </div>
-                <div class="p-1 flex-grow custom-scrollbar overflow-auto">
+                <div class="p-1 flex-grow custom-scrollbar overflow-auto relative bg-slate-200">
                     <iframe id="original-doc-iframe" src="" class="w-full h-full border-none" title="Original Document"></iframe>
+                    <div id="pdf-highlight-overlay" class="pdf-highlight-overlay hidden"></div>
+                    <div id="pdf-page-indicator" class="pdf-page-indicator">Page ?</div>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Mock data store (same as before)
+        // --- Mock Data with Sourced Content ---
         const mockResultDetailsStore = {
             "res001": { 
                 name: "白芍文献1的有效成分及药理作用分析结果", 
                 status: "approved", 
                 originalDocUrl: "https://www.africau.edu/images/default/sample.pdf",
-                currentVersion: "v1.1",
+                currentVersion: "v1.2",
                 versions: [
-                    { version: "v1.1", date: "2025-02-16", editor: "张三", notes: "最终审核通过版", content: "详细分析结果内容 v1.1...\n- 白芍总苷具有抗炎、镇痛作用。\n- 主要成分包括芍药苷、羟基芍药苷等。", approved: true },
+                    { 
+                        version: "v1.2", date: "2025-02-18", editor: "张三", 
+                        notes: "添加了溯源信息, 修正了部分表述。", 
+                        content: "文献明确指出[[白芍总苷具有显著的抗炎、镇痛双重药理作用|source:doc,page:2,rect:50,100,300,40]]。其主要活性成分包括[[芍药苷|source:doc,page:3,rect:80,150,120,25]]和羟基芍药苷等。这些发现与[[一项重要的外部研究|source:url,link:https://pubmed.ncbi.nlm.nih.gov/12345678/]]的结果相符。因此，综合来看，[[白芍作为传统中药，其药用价值得到了现代药理学的支持|source:reason,text:结合文献所述药理活性及主要成分的分析，并参考外部研究佐证。]]。", 
+                        approved: true 
+                    },
+                    { version: "v1.1", date: "2025-02-16", editor: "张三", notes: "最终审核通过版 (无溯源)", content: "详细分析结果内容 v1.1...\n- 白芍总苷具有抗炎、镇痛作用。\n- 主要成分包括芍药苷、羟基芍药苷等。", approved: true },
                     { version: "v1.0", date: "2025-02-15", editor: "李四", notes: "初步提取", content: "初步分析结果 v1.0...\n- 白芍的主要成分是A, B, C.", approved: false }
                 ]
             },
-            "res002": { 
-                name: "白芍文献2的核心观点提炼", 
-                status: "pending", 
-                originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf",
-                currentVersion: "v1.0",
-                versions: [
-                    { version: "v1.0", date: "2025-02-18", editor: "赵六", notes: "待审核版本", content: "文献核心观点：白芍在免疫调节方面有潜在应用价值。\n需要进一步实验验证。", approved: false }
-                ]
-            },
-             "res003": { 
-                name: "综述：IBD治疗中草药应用前景分析", 
-                status: "rejected", 
-                originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf",
-                currentVersion: "v1.2",
-                versions: [
-                     { version: "v1.2", date: "2025-01-22", editor: "钱七", notes: "内容不充分，已驳回", content: "综述内容 v1.2... 数据支撑不足。", approved: false, rejected: true },
-                     { version: "v1.1", date: "2025-01-21", editor: "孙八", notes: "修改后提交", content: "综述内容 v1.1... 补充了部分数据。", approved: false },
-                     { version: "v1.0", date: "2025-01-20", editor: "孙八", notes: "初稿", content: "综述内容 v1.0...", approved: false }
-                ]
-            }
+            "res002": { name: "白芍文献2的核心观点提炼", status: "pending", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf", currentVersion: "v1.0", versions: [{ version: "v1.0", date: "2025-02-18", editor: "赵六", notes: "待审核版本", content: "核心观点：[[白芍有免疫调节价值|source:doc,page:1]]。需要[[进一步验证|source:reason,text:文献结论部分提及]]。", approved: false }] },
+            "res003": { name: "综述：IBD治疗中草药应用前景分析", status: "rejected", originalDocUrl: "https://www.example.com/another.pdf", currentVersion: "v1.2", versions: [{ version: "v1.2", date: "2025-01-22", editor: "钱七", notes: "内容不充分", content: "[[中草药前景广阔|source:doc,page:5]]，但[[数据支撑不足|source:reason,text:缺乏具体临床数据]]。", approved: false, rejected: true}]}
         };
-
+        
+        // --- DOM Elements --- (Same as before)
         let currentResultId = null;
         let currentResultData = null;
         let displayedVersion = null; 
@@ -138,7 +214,7 @@
         const resultTextEdit = document.getElementById('result-text-edit');
         const editSpecificActions = document.getElementById('edit-specific-actions');
         const revisionNotesInput = document.getElementById('revision-notes');
-        const headerActionsButtons = document.getElementById('header-actions-buttons'); // Container for main buttons
+        const headerActionsButtons = document.getElementById('header-actions-buttons');
         const versionHistoryList = document.getElementById('version-history-list');
         const originalDocIframe = document.getElementById('original-doc-iframe');
         const leftPane = document.getElementById('left-pane');
@@ -146,10 +222,11 @@
         const toggleOriginalDocBtn = document.getElementById('toggle-original-doc-btn');
         const toggleDocText = document.getElementById('toggle-doc-text');
         const toggleDocIcon = toggleOriginalDocBtn.querySelector('i');
+        const pdfHighlightOverlay = document.getElementById('pdf-highlight-overlay');
+        const pdfPageIndicator = document.getElementById('pdf-page-indicator');
 
 
-        function getStatusBadgeHTML(status) {
-            // ... (same as before)
+        function getStatusBadgeHTML(status) { /* ... (same) ... */ 
             let badgeClass = '';
             let statusText = status;
             switch (status) {
@@ -161,10 +238,77 @@
             return `<span class="status-badge-lg ${badgeClass}">${statusText}</span>`;
         }
 
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe
+                 .replace(/&/g, "&")
+                 .replace(/</g, "<")
+                 .replace(/>/g, ">")
+                 .replace(/"/g, "\"")
+                 .replace(/'/g, "'");
+        }
+
+        function parseSourcedContent(rawContent) {
+            const regex = /\[\[(.*?)\|source:(.*?)\]\]/g;
+            let resultHTML = "";
+            let lastIndex = 0;
+
+            for (const match of rawContent.matchAll(regex)) {
+                const textBefore = rawContent.substring(lastIndex, match.index);
+                const inferredText = match[1].trim();
+                const sourceDataString = match[2].trim();
+                
+                resultHTML += escapeHtml(textBefore); 
+
+                let sourceAttrs = {};
+                sourceDataString.split(',').forEach(pair => {
+                    const [key, ...valueParts] = pair.split(':');
+                    if (key && valueParts.length > 0) {
+                        sourceAttrs[key.trim()] = valueParts.join(':').trim();
+                    }
+                });
+
+                let iconClass = 'fas fa-question-circle text-slate-400'; // Default icon
+                let tooltipText = `<strong>来源类型:</strong> ${sourceAttrs.type || '未知'}<br>`;
+                let ariaLabel = `查看“${escapeHtml(inferredText)}”的来源`;
+
+                if (sourceAttrs.type === 'doc') {
+                    iconClass = 'fas fa-map-marker-alt text-blue-500';
+                    tooltipText = `<strong>源自:</strong> 本文献`;
+                    ariaLabel = `来源: 本文献`;
+                    if (sourceAttrs.page) { tooltipText += `, 第 ${sourceAttrs.page} 页`; ariaLabel += `, 第 ${sourceAttrs.page} 页`; }
+                    if (sourceAttrs.rect) tooltipText += ` (区域: ${sourceAttrs.rect})`;
+                    if (sourceAttrs.sel) tooltipText += ` (段落: ${sourceAttrs.sel})`;
+                    tooltipText += `<br><em>点击跳转到文献对应位置</em>`;
+                } else if (sourceAttrs.type === 'url') {
+                    iconClass = 'fas fa-link text-green-500';
+                    const displayLink = sourceAttrs.link && sourceAttrs.link.length > 35 ? sourceAttrs.link.substring(0,32) + '...' : sourceAttrs.link;
+                    tooltipText = `<strong>源自:</strong> 外部链接<br><a href='${escapeHtml(sourceAttrs.link)}' target='_blank' rel='noopener noreferrer'>${escapeHtml(displayLink)}</a><br><em>点击打开外部链接</em>`;
+                    ariaLabel = `来源: 外部链接 ${escapeHtml(sourceAttrs.link)}`;
+                } else if (sourceAttrs.type === 'reason') {
+                    iconClass = 'fas fa-lightbulb text-orange-500';
+                    tooltipText = `<strong>推理依据:</strong><br>${escapeHtml(sourceAttrs.text) || '根据上下文推断'}<br><em>点击查看完整说明</em>`;
+                    ariaLabel = `来源: 推理 - ${escapeHtml(sourceAttrs.text) || '根据上下文推断'}`;
+                }
+
+                resultHTML += `<span class="inferred-highlight">${escapeHtml(inferredText)}</span>`;
+                resultHTML += `<span class="source-indicator" role="button" tabindex="0" aria-label="${ariaLabel}"`;
+                for (const key in sourceAttrs) {
+                    resultHTML += ` data-source-${key}="${escapeHtml(sourceAttrs[key])}"`;
+                }
+                resultHTML += `><i class="${iconClass} ml-1"></i><span class="indicator-tooltip">${tooltipText}</span></span>`;
+                
+                lastIndex = match.index + match[0].length;
+            }
+            resultHTML += escapeHtml(rawContent.substring(lastIndex));
+            return resultHTML;
+        }
+
         function displayVersionContent(versionObj) {
-            // ... (same as before)
-             displayedVersion = versionObj;
-            resultTextDisplay.textContent = versionObj.content;
+            // ... (Same as before, but now calls the refined parseSourcedContent) ...
+            displayedVersion = versionObj;
+            const parsedHtml = parseSourcedContent(versionObj.content);
+            resultTextDisplay.innerHTML = parsedHtml;
             resultVersionInfo.textContent = `版本: ${versionObj.version} | 更新: ${versionObj.date} by ${versionObj.editor}`;
             if (versionObj.notes) {
                 resultVersionInfo.textContent += ` | 说明: ${versionObj.notes}`;
@@ -174,57 +318,112 @@
                 toggleEditMode(false); 
             }
             resultTextEdit.value = versionObj.content; 
+            attachSourcedTextListeners();
+        }
+        
+        function attachSourcedTextListeners() {
+            document.querySelectorAll('.source-indicator').forEach(el => {
+                el.removeEventListener('click', handleSourcedTextClick); 
+                el.addEventListener('click', handleSourcedTextClick);
+                // For keyboard accessibility (Enter or Space to activate)
+                el.removeEventListener('keydown', handleSourceIndicatorKeydown);
+                el.addEventListener('keydown', handleSourceIndicatorKeydown);
+            });
         }
 
-        function renderVersionHistory() {
-            // ... (same as before)
+        function handleSourceIndicatorKeydown(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleSourcedTextClick(event);
+            }
+        }
+
+        function handleSourcedTextClick(event) {
+            // ... (Same logic as before, for doc, url, reason) ...
+            const target = event.currentTarget;
+            const sourceType = target.dataset.sourceType;
+
+            pdfHighlightOverlay.classList.add('hidden');
+            pdfPageIndicator.classList.remove('visible-indicator');
+
+            if (sourceType === 'doc') {
+                const page = target.dataset.sourcePage;
+                const rectStr = target.dataset.sourceRect;
+                
+                if (isOriginalDocVisible === false) { 
+                    toggleOriginalDocPane(); 
+                }
+
+                if (page) {
+                    pdfPageIndicator.textContent = `Page ${page}`;
+                    pdfPageIndicator.classList.add('visible-indicator');
+                    console.log(`Simulating navigation to PDF page: ${page}`);
+                    // Real PDF.js: originalDocIframe.contentWindow.PDFViewerApplication.page = parseInt(page);
+                }
+
+                if (rectStr) { 
+                    const rect = rectStr.split(',').map(Number);
+                    // This is a rough simulation relative to the iframe.
+                    // For accurate positioning, PDF.js viewport conversion would be needed.
+                    pdfHighlightOverlay.style.left = `${rect[0]}px`; 
+                    pdfHighlightOverlay.style.top = `${rect[1]}px`;  
+                    pdfHighlightOverlay.style.width = `${rect[2]}px`;
+                    pdfHighlightOverlay.style.height = `${rect[3]}px`;
+                    pdfHighlightOverlay.classList.remove('hidden');
+                }
+                rightPane.style.boxShadow = "0 0 15px 5px rgba(59, 130, 246, 0.4)";
+                setTimeout(() => { rightPane.style.boxShadow = ""; }, 1500);
+            } else if (sourceType === 'url') {
+                const link = target.dataset.sourceLink;
+                if (link) window.open(link, '_blank');
+            } else if (sourceType === 'reason') {
+                const reasonText = target.dataset.sourceText;
+                alert(`推理依据:\n${reasonText}`);
+            }
+        }
+
+        function renderVersionHistory() { /* ... (same) ... */ 
             versionHistoryList.innerHTML = '';
             currentResultData.versions.forEach(v => {
                 const li = document.createElement('li');
                 li.className = `p-1.5 rounded-md hover:bg-slate-100 cursor-pointer border-l-2 border-transparent version-item ${v.version === displayedVersion.version ? 'active' : ''}`;
-                li.innerHTML = `
-                    <div class="font-medium text-slate-700">版本 ${v.version} <span class="text-xs text-slate-500 font-normal">- ${v.date}</span></div>
-                    ${v.notes ? `<div class="text-slate-500 truncate" title="${v.notes}">${v.notes}</div>` : ''}
-                `;
+                li.innerHTML = `<div class="font-medium text-slate-700">版本 ${v.version} <span class="text-xs text-slate-500 font-normal">- ${v.date}</span></div>${v.notes ? `<div class="text-slate-500 truncate" title="${v.notes}">${v.notes}</div>` : ''}`;
                 li.onclick = () => {
                     displayVersionContent(v);
-                    document.querySelectorAll('#version-history-list .version-item').forEach(item => item.classList.remove('active'));
+                    document.querySelectorAll('#version-history-list .version-item.active').forEach(item => item.classList.remove('active'));
                     li.classList.add('active');
                 };
                 versionHistoryList.appendChild(li);
             });
         }
         
-        function updateMainActions() {
-            // Ensure only dynamic action buttons (Copy, Export, Review) are cleared and re-added
-            // The toggle button is static in the HTML.
-            const dynamicActionsContainer = document.getElementById('dynamic-actions-placeholder') || document.createElement('div');
+        function updateMainActions() { /* ... (same) ... */
+             const dynamicActionsContainer = document.getElementById('dynamic-actions-placeholder') || document.createElement('div');
             dynamicActionsContainer.id = 'dynamic-actions-placeholder';
-            dynamicActionsContainer.className = 'flex items-center space-x-2'; // Match existing layout
-            dynamicActionsContainer.innerHTML = ''; // Clear previous dynamic buttons
+            dynamicActionsContainer.className = 'flex items-center space-x-2';
+            dynamicActionsContainer.innerHTML = ''; 
 
-            const copyBtn = `<button id="copy-result-btn" title="复制当前结果内容" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-copy mr-1.5"></i>复制</button>`;
-            const exportBtn = `<button id="export-result-btn" title="导出当前结果" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-file-export mr-1.5"></i>导出</button>`;
-            
-            dynamicActionsContainer.innerHTML += copyBtn + exportBtn;
+            const copyBtnHtml = `<button id="copy-result-btn" title="复制当前结果纯文本(含溯源标记)" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-copy mr-1.5"></i>复制</button>`;
+            const exportBtnHtml = `<button id="export-result-btn" title="导出当前结果" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-file-export mr-1.5"></i>导出</button>`;
+            dynamicActionsContainer.innerHTML += copyBtnHtml + exportBtnHtml;
 
             if (currentResultData && currentResultData.status !== 'approved' && !isEditMode) {
-                 const reviewBtn = `<button id="review-edit-btn" class="px-3 py-1.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md flex items-center"><i class="fas fa-edit mr-1.5"></i>审核/编辑</button>`;
-                 dynamicActionsContainer.innerHTML += reviewBtn;
+                 const reviewBtnHtml = `<button id="review-edit-btn" class="px-3 py-1.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md flex items-center"><i class="fas fa-edit mr-1.5"></i>审核/编辑</button>`;
+                 dynamicActionsContainer.innerHTML += reviewBtnHtml;
             }
             
-            // Prepend dynamic actions to the header actions container, before the static toggle button
-            if (headerActionsButtons.firstChild && headerActionsButtons.firstChild.id === 'dynamic-actions-placeholder') {
-                headerActionsButtons.replaceChild(dynamicActionsContainer, headerActionsButtons.firstChild);
+            const existingPlaceholder = headerActionsButtons.querySelector('#dynamic-actions-placeholder');
+            if (existingPlaceholder) {
+                headerActionsButtons.replaceChild(dynamicActionsContainer, existingPlaceholder);
             } else {
                 headerActionsButtons.insertBefore(dynamicActionsContainer, toggleOriginalDocBtn);
             }
 
-            // Re-attach listeners for newly created buttons
             if(document.getElementById('copy-result-btn')) {
-                document.getElementById('copy-result-btn').onclick = () => { /* ... copy logic ... */ 
-                    navigator.clipboard.writeText(resultTextDisplay.textContent)
-                    .then(() => alert('结果内容已复制!'))
+                document.getElementById('copy-result-btn').onclick = () => { 
+                    const rawTextWithMarkup = displayedVersion ? displayedVersion.content : resultTextEdit.value;
+                    navigator.clipboard.writeText(rawTextWithMarkup)
+                    .then(() => alert('结果内容 (含溯源标记) 已复制!'))
                     .catch(err => console.error('复制失败:', err));
                 };
             }
@@ -234,10 +433,9 @@
             if(document.getElementById('review-edit-btn')) {
                  document.getElementById('review-edit-btn').onclick = () => toggleEditMode(true);
             }
-        }
+         }
 
-        function toggleEditMode(enable) {
-            // ... (same as before, just ensure updateMainActions is called)
+        function toggleEditMode(enable) { /* ... (same) ... */ 
             isEditMode = enable;
             if (enable) {
                 if (displayedVersion.version !== currentResultData.versions[0].version) {
@@ -254,11 +452,12 @@
                 resultTextDisplay.classList.remove('hidden');
                 resultTextEdit.classList.add('hidden');
                 editSpecificActions.classList.add('hidden');
+                displayVersionContent(displayedVersion); 
             }
             updateMainActions(); 
         }
         
-        function toggleOriginalDocPane() {
+        function toggleOriginalDocPane() { /* ... (same) ... */ 
             isOriginalDocVisible = !isOriginalDocVisible;
             if (isOriginalDocVisible) {
                 rightPane.classList.remove('hidden', 'md:w-0', 'opacity-0');
@@ -270,30 +469,33 @@
                 toggleDocIcon.classList.add('fa-eye-slash');
 
             } else {
-                rightPane.classList.add('hidden', 'md:w-0', 'opacity-0'); // 'hidden' for small screens, 'md:w-0' for transition
+                rightPane.classList.add('hidden', 'md:w-0', 'opacity-0');
                 rightPane.classList.remove('md:w-1/2');
                 leftPane.classList.add('md:w-full');
                 leftPane.classList.remove('md:w-1/2');
                 toggleDocText.textContent = '显示原文';
                 toggleDocIcon.classList.remove('fa-eye-slash');
                 toggleDocIcon.classList.add('fa-eye');
+                pdfHighlightOverlay.classList.add('hidden'); 
+                pdfPageIndicator.classList.remove('visible-indicator');
             }
         }
+        toggleOriginalDocBtn.addEventListener('click', toggleOriginalDocPane);
 
-
-        function loadResultDetails(resultId) {
-            // ... (same as before, call updateMainActions)
+        function loadResultDetails(resultId) { /* ... (same) ... */ 
             currentResultId = resultId;
             currentResultData = mockResultDetailsStore[resultId];
 
             if (!currentResultData) {
                 resultMainTitle.textContent = "结果详情: 未找到";
-                resultTextDisplay.textContent = "无法加载结果详情。";
-                updateMainActions(); // Update even if data not found to clear buttons
+                resultMainTitle.title = "结果详情: 未找到";
+                resultTextDisplay.innerHTML = "<p class='text-red-500'>无法加载结果详情。</p>";
+                updateMainActions(); 
                 return;
             }
 
             resultMainTitle.textContent = `结果详情: ${currentResultData.name}`;
+            resultMainTitle.title = `结果详情: ${currentResultData.name}`;
             resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
             originalDocIframe.src = currentResultData.originalDocUrl || "about:blank";
 
@@ -302,6 +504,7 @@
             updateMainActions();
         }
         
+        // --- Event Listeners for Edit/Save/Approve (same) ---
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const resultIdFromUrl = urlParams.get('id');
@@ -309,17 +512,15 @@
                 loadResultDetails(decodeURIComponent(resultIdFromUrl));
             } else {
                 resultMainTitle.textContent = "结果详情: 无效ID";
-                updateMainActions(); // Clear buttons if no ID
+                resultMainTitle.title = "结果详情: 无效ID";
+                updateMainActions(); 
             }
-
-            toggleOriginalDocBtn.addEventListener('click', toggleOriginalDocPane);
 
             document.getElementById('cancel-edit-btn').onclick = () => toggleEditMode(false);
             
-            document.getElementById('save-changes-btn').onclick = () => {
-                // ... (save logic same as before)
-                const newContent = resultTextEdit.value;
-                const notes = revisionNotesInput.value || "内容更新";
+            document.getElementById('save-changes-btn').onclick = () => { /* ... (same save logic) ... */ 
+                const newRawContentWithMarkup = resultTextEdit.value; 
+                const notes = revisionNotesInput.value || "内容更新 (含溯源)";
                 const currentDate = new Date().toISOString().split('T')[0];
                 const currentUser = "当前用户"; 
 
@@ -327,17 +528,12 @@
                 const newVersionNum = (latestVersionNum + 0.1).toFixed(1);
 
                 const newVersion = {
-                    version: `v${newVersionNum}`,
-                    date: currentDate,
-                    editor: currentUser,
-                    notes: notes,
-                    content: newContent,
-                    approved: false 
+                    version: `v${newVersionNum}`, date: currentDate, editor: currentUser, notes: notes,
+                    content: newRawContentWithMarkup, approved: false 
                 };
                 currentResultData.versions.unshift(newVersion); 
                 currentResultData.currentVersion = newVersion.version;
                 currentResultData.status = 'pending'; 
-
                 mockResultDetailsStore[currentResultId] = currentResultData;
 
                 displayVersionContent(newVersion);
@@ -345,36 +541,26 @@
                 resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
                 revisionNotesInput.value = '';
                 toggleEditMode(false);
-                alert('修改已保存，状态更新为待审核!');
+                alert('修改已保存 (含溯源信息)，状态更新为待审核!');
             };
 
-            document.getElementById('approve-result-btn').onclick = () => {
-                // ... (approve logic same as before)
-                 const latestVersionToApprove = currentResultData.versions[0]; // Always approve the absolute latest
+            document.getElementById('approve-result-btn').onclick = () => { /* ... (same approve logic) ... */ 
+                const latestVersionToApprove = currentResultData.versions[0];
                 
                 if (resultTextEdit.value !== latestVersionToApprove.content && isEditMode) {
                     if (!confirm("内容已修改但未保存。是否先保存更改再审核通过？\n点击 '确定' 保存并审核。\n点击 '取消' 以当前版本内容直接审核。")) {
-                        // User chose to approve current (potentially edited but unsaved) content of THE LATEST version
-                        latestVersionToApprove.content = resultTextEdit.value; // Capture unsaved edit before approving
+                        latestVersionToApprove.content = resultTextEdit.value; 
                         latestVersionToApprove.notes = revisionNotesInput.value || "审核时直接更新内容并通过";
-                    } else {
-                        // Simulate save then approve by directly modifying the latest version
+                    } else { 
                          latestVersionToApprove.content = resultTextEdit.value;
                          latestVersionToApprove.notes = revisionNotesInput.value || "保存并审核通过";
-                         // Version number doesn't change here, just content and approval status of the latest
                     }
-                } else if (!isEditMode && resultTextDisplay.textContent !== latestVersionToApprove.content) {
-                    // This case shouldn't happen if logic is correct, but as a safeguard
-                    // This implies displayedVersion is not latestVersionToApprove, which approve shouldn't act on.
-                    // Or that display got out of sync. For now, we assume approval always acts on currentResultData.versions[0]
                 }
-
                 latestVersionToApprove.approved = true;
-                latestVersionToApprove.rejected = false; // Ensure not rejected
+                latestVersionToApprove.rejected = false;
                 latestVersionToApprove.date = new Date().toISOString().split('T')[0];
-                latestVersionToApprove.editor = "审核人"; 
+                latestVersionToApprove.editor = "审核人 (模拟)"; 
                 currentResultData.status = 'approved';
-                
                 mockResultDetailsStore[currentResultId] = currentResultData;
 
                 displayVersionContent(latestVersionToApprove);
