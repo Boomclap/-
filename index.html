@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文献纵横 - 框架</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom scrollbar for webkit browsers */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        .tree-item:hover > .tree-actions {
+            opacity: 1;
+        }
+        .sidebar-icon-tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 10px;
+            padding: 4px 8px;
+            background-color: #333;
+            color: white;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 50;
+        }
+        .group:hover .sidebar-icon-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        #sidebar-flyout {
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-gray-100">
+
+    <!-- Collapsed Sidebar Flyout (Initially Hidden) -->
+    <div id="sidebar-flyout" class="hidden absolute top-0 left-16 h-full w-60 bg-slate-50 border-r border-slate-200 z-40 p-3 custom-scrollbar overflow-y-auto">
+        <h3 class="text-sm font-semibold text-slate-700 mb-2">文献导航</h3>
+        <ul class="space-y-1 text-sm" id="flyout-tree-content">
+            <!-- Tree content will be cloned here by JS -->
+        </ul>
+    </div>
+
+    <!-- Left Sidebar -->
+    <aside id="sidebar" class="bg-slate-50 border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out w-64">
+        <!-- Sidebar Header -->
+        <div class="h-14 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0">
+            <div class="flex items-center">
+                <i class="fas fa-book text-blue-600 text-xl"></i>
+                <span class="ml-2 text-lg font-semibold text-slate-700 sidebar-text">文献纵横</span>
+            </div>
+            <button id="toggle-sidebar" class="text-slate-500 hover:text-blue-600">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Actions (Visible when expanded) -->
+        <div class="p-3 space-y-2 sidebar-content">
+            <div class="flex items-center space-x-2">
+                <button id="literature-tags-btn" class="flex-1 flex items-center justify-center py-2 px-3 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-tags mr-1"></i>
+                </button>
+                <button id="add-literature-btn" class="flex-1 flex items-center justify-center py-2 px-3 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                    <i class="fas fa-plus mr-1"></i>
+                </button>
+                <button class="flex items-center text-sm text-slate-600 hover:bg-slate-200 p-2 rounded">
+                    <i class="fas fa-sync-alt w-5 text-center mr-2"></i> 刷新
+                </button>
+            </div>
+            <div class="relative">
+                <input type="text" placeholder="搜索..." class="w-full text-sm p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+            </div>
+           
+        </div>
+        
+        <!-- Collapsed Sidebar Icons (Visible when collapsed) -->
+        <div id="collapsed-sidebar-icons" class="hidden p-3 space-y-3 flex-shrink-0">
+             <div class="group relative">
+                <button id="collapsed-folder-btn" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded">
+                    <i class="fas fa-folder text-lg"></i>
+                </button>
+                <span class="sidebar-icon-tooltip">文献导航</span>
+            </div>
+             <div class="group relative">
+                <button class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded" onclick="openTab('综合调研管理', 'comprehensive_research.html')">
+                    <i class="fas fa-magnifying-glass-chart text-lg"></i>
+                </button>
+                 <span class="sidebar-icon-tooltip">综合调研管理</span>
+            </div>
+             <div class="group relative">
+                <button class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded" onclick="openTab('结果管理', 'results_management.html')">
+                    <i class="fas fa-chart-line text-lg"></i>
+                </button>
+                <span class="sidebar-icon-tooltip">结果管理</span>
+            </div>
+            <div class="group relative">
+                <button class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded" onclick="openTab('提示词管理', 'prompt_management.html')">
+                    <i class="fas fa-lightbulb text-lg"></i>
+                </button>
+                <span class="sidebar-icon-tooltip">提示词管理</span>
+            </div>
+            <div class="group relative">
+                <button id="collapsed-tags-btn" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded">
+                    <i class="fas fa-tags text-lg"></i>
+                </button>
+                 <span class="sidebar-icon-tooltip">文献标签</span>
+            </div>
+             <div class="group relative">
+                <button id="collapsed-add-btn" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-blue-100 hover:text-blue-600 rounded">
+                    <i class="fas fa-plus text-lg"></i>
+                </button>
+                <span class="sidebar-icon-tooltip">添加文献</span>
+            </div>
+        </div>
+
+        <!-- Tree Navigation (Visible when expanded) -->
+        <nav id="tree-navigation-container" class="flex-grow p-3 custom-scrollbar overflow-y-auto sidebar-content">
+            <ul class="space-y-1 text-sm" id="main-tree-nav">
+                <!-- Sample Tree Structure -->
+                <li class="tree-item group">
+                    <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer">
+                        <span class="flex items-center">
+                            <i class="fas fa-folder-open w-5 text-center mr-1 text-amber-500"></i>
+                            疾病药靶文献
+                        </span>
+                        <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 border-l border-slate-200 ml-2.5">
+                        <li class="tree-item group">
+                            <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer">
+                                <span class="flex items-center">
+                                    <i class="fas fa-folder w-5 text-center mr-1 text-amber-500"></i> IBD
+                                </span>
+                                <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                            </div>
+                        </li>
+                        <li class="tree-item group">
+                           <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer">
+                                <span class="flex items-center">
+                                    <i class="far fa-file-alt w-5 text-center mr-1 text-slate-500"></i> xxx
+                                </span>
+                                <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                <li class="tree-item group">
+                    <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer bg-blue-100 text-blue-700">
+                        <span class="flex items-center">
+                            <i class="fas fa-folder w-5 text-center mr-1 text-amber-500"></i> 药材
+                        </span>
+                        <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 border-l border-slate-200 ml-2.5">
+                         <li class="tree-item group">
+                            <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer bg-blue-100 text-blue-700">
+                                <span class="flex items-center">
+                                    <i class="far fa-file-alt w-5 text-center mr-1 text-slate-500"></i> 白芍
+                                </span>
+                                <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                            </div>
+                        </li>
+                         <li class="tree-item group">
+                            <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer">
+                                <span class="flex items-center">
+                                    <i class="far fa-file-alt w-5 text-center mr-1 text-slate-500"></i> 北豆根
+                                </span>
+                                <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                            </div>
+                        </li>
+                         <li class="tree-item group">
+                            <div class="flex items-center justify-between p-1.5 rounded hover:bg-slate-200 cursor-pointer">
+                                <span class="flex items-center">
+                                    <i class="far fa-file-alt w-5 text-center mr-1 text-slate-500"></i> 巴豆
+                                </span>
+                                <i class="fas fa-ellipsis-h text-slate-400 opacity-0 group-hover:opacity-100 tree-actions"></i>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Sidebar Footer Nav (Visible when expanded) -->
+        <div class="p-2 border-t border-slate-200 sidebar-content flex-shrink-0">
+            <nav class="space-y-1">
+                <a href="#" class="flex items-center p-2 text-sm text-slate-600 hover:bg-slate-200 rounded" onclick="openTab('综合调研管理', 'comprehensive_research.html')">
+                    <i class="fas fa-magnifying-glass-chart w-5 text-center mr-2"></i> 综合调研管理
+                </a>
+                <a href="#" class="flex items-center p-2 text-sm text-slate-600 hover:bg-slate-200 rounded" onclick="openTab('结果管理', 'results_management.html')">
+                    <i class="fas fa-chart-line w-5 text-center mr-2"></i> 结果管理
+                </a>
+<a href="#" class="flex items-center p-2 text-sm text-slate-600 hover:bg-slate-200 rounded" onclick="openTab('提示词管理', 'prompt_management.html')">
+    <i class="fas fa-lightbulb w-5 text-center mr-2"></i> 提示词管理
+</a>
+
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Navigation Bar -->
+        <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 flex-shrink-0">
+            <!-- Tabs -->
+            <div id="tabs-container" class="flex items-center h-full overflow-x-auto custom-scrollbar">
+                <!-- Tabs will be dynamically added here -->
+            </div>
+            <!-- User/Task Icons -->
+            <div class="flex items-center space-x-4 ml-4">
+                <div class="relative">
+                    <button id="tasks-button" class="text-slate-500 hover:text-blue-600 relative">
+                        <i class="fas fa-tasks text-lg"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">2</span>
+                    </button>
+                    <!-- Tasks Dropdown -->
+                    <div id="tasks-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg border border-slate-200 z-50">
+                        <div class="py-2 px-3 border-b border-slate-200">
+                            <h3 class="text-sm font-semibold text-slate-700">后台任务</h3>
+                        </div>
+                        <div class="p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                            <div class="text-sm">
+                                <p class="text-slate-600">文献解析中: "IBD最新研究进展.pdf"</p>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            <div class="text-sm">
+                                <p class="text-slate-600">批量上传: "药材文献包.zip"</p>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                                    <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                </div>
+                                <p class="text-xs text-green-600 mt-0.5">完成</p>
+                            </div>
+                             <div class="text-sm">
+                                <p class="text-slate-600">数据同步...</p>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                                    <div class="bg-yellow-500 h-1.5 rounded-full animate-pulse" style="width: 50%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-t border-slate-200 text-center">
+                            <a href="#" class="text-xs text-blue-600 hover:underline">查看所有任务</a>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-slate-500 hover:text-blue-600">
+                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=32&rounded=true" alt="User Avatar" class="w-8 h-8 rounded-full">
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Iframe -->
+        <main class="flex-1 bg-white">
+            <iframe id="content-frame" name="content-frame" src="welcome.html" class="w-full h-full border-0"></iframe>
+        </main>
+    </div>
+
+    <!-- Context Menu (Initially Hidden) -->
+    <div id="context-menu" class="hidden absolute bg-white border border-slate-300 rounded-md shadow-lg py-1 text-sm z-50 w-48">
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100" onclick="openTab('文献管理', 'literature_management.html'); contextMenu.classList.add('hidden'); return false;">查看文献</a>
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100">查看综合调研</a>
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100">查看结果</a>
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100">上传压缩包</a>
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100">创建子文件夹</a>
+        <a href="#" class="block px-4 py-1.5 text-slate-700 hover:bg-slate-100">重命名</a>
+        <div class="my-1 border-t border-slate-200"></div>
+        <a href="#" class="block px-4 py-1.5 text-red-600 hover:bg-red-50">删除文件夹</a>
+    </div>
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+        const sidebarTextElements = sidebar.querySelectorAll('.sidebar-text');
+        const sidebarContentElements = sidebar.querySelectorAll('.sidebar-content');
+        const collapsedSidebarIcons = document.getElementById('collapsed-sidebar-icons');
+        const contentFrame = document.getElementById('content-frame');
+        const tabsContainer = document.getElementById('tabs-container');
+        const contextMenu = document.getElementById('context-menu');
+        const treeItems = document.querySelectorAll('#main-tree-nav .tree-item > div'); // Select the clickable div
+        const tasksButton = document.getElementById('tasks-button');
+        const tasksDropdown = document.getElementById('tasks-dropdown');
+        const literatureTagsBtn = document.getElementById('literature-tags-btn');
+        const addLiteratureBtn = document.getElementById('add-literature-btn');
+        const collapsedTagsBtn = document.getElementById('collapsed-tags-btn');
+        const collapsedAddBtn = document.getElementById('collapsed-add-btn');
+
+        const collapsedFolderBtn = document.getElementById('collapsed-folder-btn');
+        const sidebarFlyout = document.getElementById('sidebar-flyout');
+        const mainTreeNav = document.getElementById('main-tree-nav');
+        const flyoutTreeContent = document.getElementById('flyout-tree-content');
+
+        let openTabs = {}; // To keep track of open tabs: { 'id': { title: 'Title', url: 'url.html', element: tabElement } }
+        let activeTabId = null;
+        let tabCounter = 0;
+
+        // Sidebar Toggle
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-16');
+            const icon = toggleSidebarBtn.querySelector('i');
+            icon.classList.toggle('fa-chevron-left');
+            icon.classList.toggle('fa-chevron-right');
+
+            sidebarTextElements.forEach(el => el.classList.toggle('hidden'));
+            sidebarContentElements.forEach(el => el.classList.toggle('hidden'));
+            collapsedSidebarIcons.classList.toggle('hidden');
+            
+            if (sidebar.classList.contains('w-16')) { // If sidebar is collapsed
+                sidebarFlyout.classList.add('hidden'); // Hide flyout if open
+            }
+        });
+        
+        // Collapsed Sidebar Folder Flyout
+        collapsedFolderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sidebar.classList.contains('w-16')) { // Only if sidebar is collapsed
+                if (sidebarFlyout.classList.contains('hidden')) {
+                    flyoutTreeContent.innerHTML = ''; // Clear previous content
+                    const clonedTree = mainTreeNav.cloneNode(true); // Clone the main tree
+                    flyoutTreeContent.appendChild(clonedTree);
+                    // Add context menu listener to cloned tree items
+                    addContextMenuListenerToFlyoutTree();
+                    sidebarFlyout.classList.remove('hidden');
+                } else {
+                    sidebarFlyout.classList.add('hidden');
+                }
+            }
+        });
+
+        // Hide flyout when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebarFlyout.contains(e.target) && e.target !== collapsedFolderBtn && !collapsedFolderBtn.contains(e.target)) {
+                sidebarFlyout.classList.add('hidden');
+            }
+            // Hide context menu
+            if (!contextMenu.contains(e.target)) {
+                contextMenu.classList.add('hidden');
+            }
+            // Hide tasks dropdown
+            if (!tasksDropdown.contains(e.target) && e.target !== tasksButton && !tasksButton.contains(e.target)) {
+                tasksDropdown.classList.add('hidden');
+            }
+        });
+
+
+        // Tab Management
+        function createTabId(url) {
+            return 'tab-' + url.replace(/[^a-zA-Z0-9]/g, '-');
+        }
+
+        function openTab(title, url, activate = true) {
+            const tabId = createTabId(url);
+
+            if (openTabs[tabId]) {
+                if (activate) switchToTab(tabId);
+                return;
+            }
+            
+            tabCounter++;
+            const uniqueId = `dynamic-tab-${tabCounter}`;
+
+            const tabElement = document.createElement('button');
+            tabElement.className = 'px-4 h-full flex items-center text-sm border-b-2 border-transparent focus:outline-none';
+            tabElement.dataset.tabId = tabId;
+            tabElement.dataset.url = url;
+            tabElement.innerHTML = `
+                <span class="mr-2 tab-title">${title}</span>
+                <i class="fas fa-times text-xs text-slate-400 hover:text-red-500 p-1 rounded-full hover:bg-slate-200 close-tab-btn"></i>
+            `;
+            tabsContainer.appendChild(tabElement);
+
+            openTabs[tabId] = { title: title, url: url, element: tabElement, uniqueId: uniqueId };
+
+            tabElement.addEventListener('click', (e) => {
+                if (e.target.classList.contains('close-tab-btn') || e.target.parentElement.classList.contains('close-tab-btn')) {
+                    closeTab(tabId);
+                } else {
+                    switchToTab(tabId);
+                }
+            });
+            
+            const closeBtn = tabElement.querySelector('.close-tab-btn');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent tab switch when closing
+                closeTab(tabId);
+            });
+
+            if (activate) {
+                switchToTab(tabId);
+            }
+             // Scroll to the new tab if tabs overflow
+            tabsContainer.scrollLeft = tabsContainer.scrollWidth;
+        }
+
+        function switchToTab(tabId) {
+            if (!openTabs[tabId]) return;
+
+            // Deactivate current active tab
+            if (activeTabId && openTabs[activeTabId]) {
+                openTabs[activeTabId].element.classList.remove('text-blue-600', 'border-blue-600', 'font-semibold');
+                openTabs[activeTabId].element.classList.add('text-slate-500', 'hover:text-blue-600');
+            }
+
+            // Activate new tab
+            openTabs[tabId].element.classList.add('text-blue-600', 'border-blue-600', 'font-semibold');
+            openTabs[tabId].element.classList.remove('text-slate-500', 'hover:text-blue-600');
+            contentFrame.src = openTabs[tabId].url;
+            activeTabId = tabId;
+        }
+
+        function closeTab(tabId) {
+            if (!openTabs[tabId]) return;
+
+            const tabElement = openTabs[tabId].element;
+            tabElement.remove();
+            delete openTabs[tabId];
+
+            if (activeTabId === tabId) {
+                activeTabId = null;
+                const remainingTabIds = Object.keys(openTabs);
+                if (remainingTabIds.length > 0) {
+                    switchToTab(remainingTabIds[remainingTabIds.length - 1]); // Switch to the last tab
+                } else {
+                    contentFrame.src = 'about:blank'; // Or a default page
+                }
+            }
+        }
+        
+        // Context Menu for Tree Items
+        function showContextMenu(event, item) {
+            event.preventDefault();
+            contextMenu.style.top = `${event.pageY}px`;
+            contextMenu.style.left = `${event.pageX}px`;
+            contextMenu.classList.remove('hidden');
+            // You can pass `item` to context menu actions if needed
+        }
+
+        treeItems.forEach(item => {
+            item.addEventListener('contextmenu', (event) => showContextMenu(event, item));
+        });
+
+        function addContextMenuListenerToFlyoutTree() {
+            const flyoutTreeItems = sidebarFlyout.querySelectorAll('.tree-item > div');
+            flyoutTreeItems.forEach(item => {
+                item.addEventListener('contextmenu', (event) => showContextMenu(event, item));
+                 // Example click action for flyout tree items (can open tabs or perform other actions)
+                item.addEventListener('click', () => {
+                    const itemName = item.querySelector('span').textContent.trim();
+                    const isFolder = item.querySelector('i').classList.contains('fa-folder') || item.querySelector('i').classList.contains('fa-folder-open');
+                    if (!isFolder) { // Example: only open tabs for files
+                         openTab(itemName, `literature_detail.html?name=${encodeURIComponent(itemName)}`);
+                         sidebarFlyout.classList.add('hidden'); // Hide flyout after click
+                    }
+                });
+            });
+        }
+        addContextMenuListenerToFlyoutTree(); // Initial call for any static content if needed (though main tree is used for cloning)
+
+
+        // Tasks Dropdown Toggle
+        tasksButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tasksDropdown.classList.toggle('hidden');
+        });
+
+        // Literature Tags Button Action
+        const commonTagAction = () => {
+            console.log("文献标签 action triggered");
+            openTab('文献标签', 'literature_tags.html');
+            if (sidebar.classList.contains('w-16')) { // if sidebar is collapsed
+                sidebarFlyout.classList.add('hidden'); // hide flyout if open
+            }
+        };
+        literatureTagsBtn.addEventListener('click', commonTagAction);
+        collapsedTagsBtn.addEventListener('click', commonTagAction);
+
+        // Add Literature Button Action
+        const commonAddAction = () => {
+            console.log("添加文献 action triggered");
+            // This would typically open a modal or a dedicated "add literature" tab/page
+            alert("弹出添加文献窗口 (占位)");
+             if (sidebar.classList.contains('w-16')) { // if sidebar is collapsed
+                sidebarFlyout.classList.add('hidden'); // hide flyout if open
+            }
+        };
+        addLiteratureBtn.addEventListener('click', commonAddAction);
+        collapsedAddBtn.addEventListener('click', commonAddAction);
+        
+
+        // Initial Tab
+        openTab('文献纵横, 欢迎您', 'welcome.html');
+
+    </script>
+</body>
+</html>

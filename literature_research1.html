@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文献调研</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+        .pane-transition { transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+        .chat-bubble { max-width: 90%; }
+        .chat-bubble-user { background-color: #e0f2fe; /* sky-100 */ color: #0c4a6e; /* sky-800 */ }
+        .chat-bubble-model { background-color: #f3f4f6; /* gray-100 */ color: #1f2937; /* gray-800 */ }
+        .analysis-item.active, .response-item.active { background-color: #bfdbfe; /* blue-200 */ }
+        .prompt-action-btn { padding: 0.375rem 0.75rem; font-size: 0.75rem; border-radius: 0.25rem; }
+        #original-doc-iframe-lit { min-height: calc(100vh - 100px); }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans">
+    <div class="flex flex-col h-screen">
+        <header class="bg-white shadow-sm p-3 border-b border-slate-200 flex-shrink-0">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 id="literature-title" class="text-lg font-semibold text-slate-800 truncate mr-4">文献调研: 加载中...</h1>
+                <div class="flex items-center space-x-2">
+                     <button id="save-all-analysis-btn" title="保存整个调研过程(占位)" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-save mr-1.5"></i> 保存调研
+                    </button>
+                    <button id="toggle-original-doc-lit-btn" title="切换原始文献显隐" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-eye-slash mr-1.5"></i> <span id="toggle-doc-lit-text">隐藏原文</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-3 gap-3">
+            <!-- Left Pane: Analysis Process -->
+            <div id="left-pane-lit" class="w-full md:w-1/2 flex flex-col bg-white rounded-lg shadow overflow-hidden pane-transition">
+                <!-- Controls Area -->
+                <div class="p-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                        <div>
+                            <label for="model-select" class="block text-xs font-medium text-slate-600 mb-0.5">选择模型</label>
+                            <select id="model-select" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white">
+                                <option value="gpt-4">GPT-4 Turbo</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="claude-2">Claude 2</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="prompt-select" class="block text-xs font-medium text-slate-600 mb-0.5">选择提示词</label>
+                            <select id="prompt-select" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white">
+                                <option value="">--选择预设提示词--</option>
+                                <!-- Prompts populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="custom-prompt-area" class="block text-xs font-medium text-slate-600 mb-0.5">当前提示词 (可编辑)</label>
+                        <textarea id="custom-prompt-area" rows="4" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 custom-scrollbar" placeholder="输入或修改提示词..."></textarea>
+                    </div>
+                    <div class="mt-2 flex flex-wrap justify-between items-center gap-2">
+                        <div class="space-x-1.5">
+                            <button id="reset-prompt-btn" class="prompt-action-btn bg-slate-200 hover:bg-slate-300 text-slate-700"><i class="fas fa-undo mr-1"></i>重置</button>
+                            <button id="clear-prompt-btn" class="prompt-action-btn bg-slate-200 hover:bg-slate-300 text-slate-700"><i class="fas fa-times mr-1"></i>清除</button>
+                            <button id="copy-prompt-btn" class="prompt-action-btn bg-slate-200 hover:bg-slate-300 text-slate-700"><i class="fas fa-copy mr-1"></i>复制</button>
+                            <button id="save-prompt-btn" class="prompt-action-btn bg-blue-500 hover:bg-blue-600 text-white"><i class="fas fa-save mr-1"></i>保存提示词</button>
+                        </div>
+                        <button id="send-analysis-btn" class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md flex items-center">
+                            <i class="fas fa-paper-plane mr-2"></i> 发送解析 (解析 +1)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analysis/Conversation Area -->
+                <div class="flex-grow flex flex-col overflow-hidden">
+                    <!-- Analysis Navigation -->
+                    <div class="p-2 border-b border-slate-200 flex items-center space-x-2 flex-shrink-0 bg-slate-50/50">
+                        <label for="analysis-selector" class="text-xs font-medium text-slate-600">选择解析:</label>
+                        <select id="analysis-selector" class="text-xs p-1 border border-slate-300 rounded-md bg-white flex-grow">
+                            <!-- Options populated by JS -->
+                            <option value="">暂无解析</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Chat/Response Display Area -->
+                    <div id="chat-display-area" class="flex-grow p-3 space-y-3 overflow-y-auto custom-scrollbar bg-white">
+                        <!-- Chat messages will appear here -->
+                         <p class="text-center text-sm text-slate-400 py-4">请发送解析开始调研。</p>
+                    </div>
+
+                    <!-- Response Actions & Navigation -->
+                    <div id="response-actions-bar" class="p-2 border-t border-slate-200 bg-slate-50 flex-shrink-0 hidden items-center justify-between">
+                        <div class="flex items-center space-x-1.5">
+                             <span class="text-xs font-medium text-slate-600">回答:</span>
+                            <div id="response-navigation-dots" class="flex space-x-1">
+                                <!-- Dots populated by JS -->
+                            </div>
+                        </div>
+                        <div class="space-x-1.5">
+                            <button id="regenerate-response-btn" class="prompt-action-btn bg-blue-500 hover:bg-blue-600 text-white"><i class="fas fa-redo-alt mr-1"></i>重新生成 (回答 +1)</button>
+                            <button id="save-as-result-btn" class="prompt-action-btn bg-teal-500 hover:bg-teal-600 text-white"><i class="fas fa-check-circle mr-1"></i>保存为结果</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Pane: Original Document -->
+            <div id="right-pane-lit" class="w-full md:w-1/2 bg-white rounded-lg shadow overflow-hidden flex flex-col pane-transition">
+                 <div class="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center flex-shrink-0">
+                    <h2 class="text-base font-semibold text-slate-700">原始文献</h2>
+                    <div class="text-xs text-slate-500">
+                        <button title="上一页" class="px-2 py-1 hover:bg-slate-200 rounded-md"><i class="fas fa-chevron-left"></i></button>
+                        <span>1 / 1</span>
+                        <button title="下一页" class="px-2 py-1 hover:bg-slate-200 rounded-md"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="p-1 flex-grow custom-scrollbar overflow-auto">
+                    <iframe id="original-doc-iframe-lit" src="" class="w-full h-full border-none" title="Original Document"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        let currentLiteratureId = null;
+        let currentLiteratureData = null; // To store title, originalDocUrl
+        let analysisSessions = []; // Array of { sessionId, promptUsed, modelUsed, responses: [{content, timestamp}]}
+        let currentAnalysisSessionId = null;
+        let currentResponseIndex = 0;
+
+        const mockPrompts = [
+            { id: "prompt1", name: "提取关键信息", text: "请从以下文献中提取关键信息，包括研究目的、方法、主要发现和结论。" },
+            { id: "prompt2", name: "生成摘要 (300字)", text: "请根据以下文献内容，生成一段不超过300字且易于理解的摘要。" },
+            { id: "prompt3", name: "识别主要论点", text: "请识别并列出文献中的主要论点及其支撑论据。" }
+        ];
+
+        const mockLiteratureDetails = {
+            "ibd最新研究进展.pdf-doc": { title: "IBD最新研究进展.pdf", originalDocUrl: "https://www.africau.edu/images/default/sample.pdf" },
+            "白芍化学成分分析.docx-doc": { title: "白芍化学成分分析.docx", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf" },
+             "lit001": { title: "IBD最新研究进展.pdf", originalDocUrl: "https://www.africau.edu/images/default/sample.pdf" }, // From management list
+            "lit002": { title: "白芍化学成分分析.docx", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf" },
+            "lit003": { title: "炎症性肠病治疗靶点研究.pdf", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf"},
+            "lit004": { title: "北豆根药理作用探讨.pdf", originalDocUrl: "https://www.africau.edu/images/default/sample.pdf"},
+            "lit005": { title: "巴豆临床应用安全性评估.pdf", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf"},
+        };
+
+        // --- DOM Elements ---
+        const literatureTitleEl = document.getElementById('literature-title');
+        const modelSelectEl = document.getElementById('model-select');
+        const promptSelectEl = document.getElementById('prompt-select');
+        const customPromptAreaEl = document.getElementById('custom-prompt-area');
+        const sendAnalysisBtn = document.getElementById('send-analysis-btn');
+        const analysisSelectorEl = document.getElementById('analysis-selector');
+        const chatDisplayAreaEl = document.getElementById('chat-display-area');
+        const responseActionsBarEl = document.getElementById('response-actions-bar');
+        const responseNavigationDotsEl = document.getElementById('response-navigation-dots');
+        const regenerateResponseBtn = document.getElementById('regenerate-response-btn');
+        const saveAsResultBtn = document.getElementById('save-as-result-btn');
+        const originalDocIframeLit = document.getElementById('original-doc-iframe-lit');
+        const leftPaneLit = document.getElementById('left-pane-lit');
+        const rightPaneLit = document.getElementById('right-pane-lit');
+        const toggleOriginalDocLitBtn = document.getElementById('toggle-original-doc-lit-btn');
+        const toggleDocLitText = document.getElementById('toggle-doc-lit-text');
+        const toggleDocLitIcon = toggleOriginalDocLitBtn.querySelector('i');
+        let isOriginalDocLitVisible = true;
+
+        // --- Functions ---
+        function populatePrompts() {
+            mockPrompts.forEach(p => {
+                promptSelectEl.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+        }
+
+        promptSelectEl.addEventListener('change', function() {
+            const selectedPrompt = mockPrompts.find(p => p.id === this.value);
+            if (selectedPrompt) {
+                customPromptAreaEl.value = selectedPrompt.text;
+            } else if (this.value === "") {
+                 // customPromptAreaEl.value = ""; // Optionally clear if "--select--" is chosen
+            }
+        });
+        
+        document.getElementById('reset-prompt-btn').onclick = () => {
+            const selectedPrompt = mockPrompts.find(p => p.id === promptSelectEl.value);
+            customPromptAreaEl.value = selectedPrompt ? selectedPrompt.text : "";
+        };
+        document.getElementById('clear-prompt-btn').onclick = () => {
+            customPromptAreaEl.value = "";
+            promptSelectEl.value = ""; // Reset dropdown as well
+        };
+        document.getElementById('copy-prompt-btn').onclick = () => {
+            navigator.clipboard.writeText(customPromptAreaEl.value)
+                .then(() => alert("提示词已复制!"))
+                .catch(err => console.error("复制失败:", err));
+        };
+        document.getElementById('save-prompt-btn').onclick = () => {
+            const newPromptText = customPromptAreaEl.value.trim();
+            if (!newPromptText) {
+                alert("提示词内容不能为空!");
+                return;
+            }
+            // In a real app, this would open a modal to name and save the prompt.
+            // For prototype, just add to mockPrompts and re-populate.
+            const newPromptId = `custom-prompt-${Date.now()}`;
+            const newPromptName = prompt(`请输入新提示词的名称:`, `自定义提示词 ${mockPrompts.filter(p=>p.id.startsWith('custom')).length + 1}`);
+            if (newPromptName) {
+                mockPrompts.push({ id: newPromptId, name: newPromptName, text: newPromptText });
+                promptSelectEl.innerHTML = '<option value="">--选择预设提示词--</option>'; // Clear and re-populate
+                populatePrompts();
+                promptSelectEl.value = newPromptId; // Select the newly saved prompt
+                alert(`提示词 "${newPromptName}" 已保存!`);
+            }
+        };
+
+
+        function addChatMessage(content, type = 'model', promptUsed = null) {
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `chat-bubble p-3 rounded-lg text-sm mb-2 ${type === 'user' ? 'chat-bubble-user self-end text-right' : 'chat-bubble-model self-start'}`;
+            
+            let htmlContent = '';
+            if (type === 'user' && promptUsed) {
+                htmlContent += `<div class="text-xs font-semibold mb-1 border-b border-current opacity-70 pb-1">发送的提示词:</div><pre class="whitespace-pre-wrap text-left">${promptUsed}</pre>`;
+            } else {
+                 htmlContent += `<pre class="whitespace-pre-wrap">${content}</pre>`;
+            }
+            bubbleDiv.innerHTML = htmlContent;
+            chatDisplayAreaEl.appendChild(bubbleDiv);
+            chatDisplayAreaEl.scrollTop = chatDisplayAreaEl.scrollHeight;
+        }
+
+        function renderCurrentAnalysisSession() {
+            chatDisplayAreaEl.innerHTML = ''; // Clear previous messages
+            const session = analysisSessions.find(s => s.sessionId === currentAnalysisSessionId);
+            if (!session) {
+                 chatDisplayAreaEl.innerHTML = '<p class="text-center text-sm text-slate-400 py-4">请选择一个解析会话。</p>';
+                 responseActionsBarEl.classList.add('hidden');
+                return;
+            }
+
+            // Display the initial prompt for this session
+            addChatMessage(null, 'user', session.promptUsed);
+
+            // Display all responses for this session
+            session.responses.forEach((response, index) => {
+                addChatMessage(response.content, 'model');
+            });
+            
+            currentResponseIndex = session.responses.length - 1; // Point to the latest response
+            renderResponseNavigation();
+            responseActionsBarEl.classList.remove('hidden');
+        }
+        
+        function renderResponseNavigation() {
+            responseNavigationDotsEl.innerHTML = '';
+            const session = analysisSessions.find(s => s.sessionId === currentAnalysisSessionId);
+            if (!session || session.responses.length === 0) return;
+
+            session.responses.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = `w-5 h-5 text-xs rounded-full border border-slate-400 flex items-center justify-center response-item ${index === currentResponseIndex ? 'active bg-blue-500 text-white' : 'bg-white hover:bg-slate-200'}`;
+                dot.textContent = index + 1;
+                dot.onclick = () => {
+                    currentResponseIndex = index;
+                    // For this design, we display all responses, but highlight the dot.
+                    // If you want to ONLY show one response at a time, you'd clear and re-add one chat bubble.
+                    document.querySelectorAll('.response-item').forEach(d => d.classList.remove('active', 'bg-blue-500', 'text-white'));
+                    dot.classList.add('active', 'bg-blue-500', 'text-white');
+                };
+                responseNavigationDotsEl.appendChild(dot);
+            });
+        }
+
+
+        sendAnalysisBtn.addEventListener('click', () => {
+            const promptText = customPromptAreaEl.value.trim();
+            const model = modelSelectEl.value;
+            if (!promptText) {
+                alert("请输入提示词内容!");
+                return;
+            }
+            
+            const newSessionId = `analysis-${Date.now()}`;
+            const newSession = {
+                sessionId: newSessionId,
+                promptUsed: promptText,
+                modelUsed: model,
+                timestamp: new Date().toISOString(),
+                responses: [
+                    { content: `模拟模型 (${model}) 对提示词的回答 (解析 #${analysisSessions.length + 1}, 回答 #1):\n"${promptText.substring(0,50)}..."\n这是第一次的回答内容。`, timestamp: new Date().toISOString() }
+                ]
+            };
+            analysisSessions.unshift(newSession); // Add to beginning for newest first in dropdown
+            currentAnalysisSessionId = newSessionId;
+            
+            updateAnalysisSelector();
+            analysisSelectorEl.value = newSessionId; // Select the new session
+            renderCurrentAnalysisSession();
+        });
+
+        regenerateResponseBtn.addEventListener('click', () => {
+            const session = analysisSessions.find(s => s.sessionId === currentAnalysisSessionId);
+            if (!session) return;
+
+            const newResponse = {
+                content: `模拟模型 (${session.modelUsed}) 重新生成的回答 (解析 #${analysisSessions.findIndex(s=>s.sessionId === currentAnalysisSessionId)+1}, 回答 #${session.responses.length + 1}):\n这是重新生成的内容，基于相同的初始提示词。`,
+                timestamp: new Date().toISOString()
+            };
+            session.responses.push(newResponse);
+            renderCurrentAnalysisSession(); // This will re-render all messages and update nav
+        });
+        
+        saveAsResultBtn.addEventListener('click', () => {
+            const session = analysisSessions.find(s => s.sessionId === currentAnalysisSessionId);
+            if (!session || session.responses.length === 0) return;
+            
+            const responseToSave = session.responses[currentResponseIndex];
+            if (responseToSave) {
+                alert(`结果内容:\n"${responseToSave.content.substring(0, 100)}..."\n已保存 (模拟)`);
+                // In a real app, this would trigger a process to save this to the "Results Management" system
+            }
+        });
+
+        function updateAnalysisSelector() {
+            analysisSelectorEl.innerHTML = '';
+            if (analysisSessions.length === 0) {
+                analysisSelectorEl.innerHTML = '<option value="">暂无解析</option>';
+                responseActionsBarEl.classList.add('hidden');
+                chatDisplayAreaEl.innerHTML = '<p class="text-center text-sm text-slate-400 py-4">请发送解析开始调研。</p>';
+                return;
+            }
+            analysisSessions.forEach((session, index) => {
+                const date = new Date(session.timestamp).toLocaleTimeString();
+                analysisSelectorEl.innerHTML += `<option value="${session.sessionId}">解析 ${analysisSessions.length - index} (${date}) - ${session.promptUsed.substring(0,20)}...</option>`;
+            });
+            analysisSelectorEl.value = currentAnalysisSessionId || analysisSessions[0].sessionId;
+        }
+        
+        analysisSelectorEl.addEventListener('change', function() {
+            currentAnalysisSessionId = this.value;
+            renderCurrentAnalysisSession();
+        });
+
+        function toggleOriginalDocLitPane() {
+            isOriginalDocLitVisible = !isOriginalDocLitVisible;
+            if (isOriginalDocLitVisible) {
+                rightPaneLit.classList.remove('hidden', 'md:w-0', 'opacity-0');
+                rightPaneLit.classList.add('md:w-1/2');
+                leftPaneLit.classList.remove('md:w-full');
+                leftPaneLit.classList.add('md:w-1/2');
+                toggleDocLitText.textContent = '隐藏原文';
+                toggleDocLitIcon.classList.remove('fa-eye');
+                toggleDocLitIcon.classList.add('fa-eye-slash');
+            } else {
+                rightPaneLit.classList.add('hidden', 'md:w-0', 'opacity-0');
+                rightPaneLit.classList.remove('md:w-1/2');
+                leftPaneLit.classList.add('md:w-full');
+                leftPaneLit.classList.remove('md:w-1/2');
+                toggleDocLitText.textContent = '显示原文';
+                toggleDocLitIcon.classList.remove('fa-eye-slash');
+                toggleDocLitIcon.classList.add('fa-eye');
+            }
+        }
+        toggleOriginalDocLitBtn.addEventListener('click', toggleOriginalDocLitPane);
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentLiteratureId = urlParams.get('id');
+            currentLiteratureData = mockLiteratureDetails[currentLiteratureId];
+
+            if (currentLiteratureData) {
+                literatureTitleEl.textContent = `文献调研: ${currentLiteratureData.title}`;
+                originalDocIframeLit.src = currentLiteratureData.originalDocUrl || "about:blank";
+            } else {
+                literatureTitleEl.textContent = "文献调研: 未找到文献";
+                chatDisplayAreaEl.innerHTML = '<p class="text-center text-red-500 py-4">错误：无法加载文献信息。</p>';
+            }
+            populatePrompts();
+            updateAnalysisSelector(); // Initial call in case there's persisted session data later
+        });
+
+    </script>
+</body>
+</html>

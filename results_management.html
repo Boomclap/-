@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>结果管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+        .table-fixed-layout { table-layout: fixed; }
+        .action-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.25rem; /* 4px */
+            z-index: 20; /* Ensure it's above table content */
+        }
+        .status-badge { padding: 0.25rem 0.6rem; font-size: 0.75rem; border-radius: 9999px; font-weight: 500; }
+        .status-pending { background-color: #fef3c7; color: #b45309; } /* amber-100, amber-700 */
+        .status-approved { background-color: #d1fae5; color: #047857; } /* green-100, green-700 */
+        .status-rejected { background-color: #fee2e2; color: #b91c1c; } /* red-100, red-700 */
+    </style>
+</head>
+<body class="bg-slate-100 font-sans p-4 md:p-6">
+    <div class="container mx-auto">
+        <header class="mb-6">
+            <h1 class="text-2xl font-semibold text-slate-800">结果管理</h1>
+        </header>
+
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex space-x-2">
+                    <button data-filter="all" class="filter-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 active">全部</button>
+                    <button data-filter="pending" class="filter-btn px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 focus:outline-none">待审核</button>
+                    <button data-filter="approved" class="filter-btn px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 focus:outline-none">审核通过</button>
+                    <button data-filter="rejected" class="filter-btn px-4 py-2 text-sm font-medium text-slate-700 bg-slate-200 rounded-md hover:bg-slate-300 focus:outline-none">审核不通过</button>
+                </div>
+                <div class="relative w-full sm:w-auto">
+                    <input type="text" id="search-results" placeholder="搜索结果名称..." class="w-full sm:w-64 p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+                    <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"><i class="fas fa-download mr-1.5"></i> 批量导出</button>
+                    <button class="px-3 py-2 text-sm bg-slate-500 text-white rounded-md hover:bg-slate-600 flex items-center"><i class="fas fa-sync-alt mr-1.5"></i> 刷新</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-x-auto custom-scrollbar">
+            <table class="w-full min-w-[1000px] text-sm text-left text-slate-500 table-fixed-layout">
+                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                    <tr>
+                        <th scope="col" class="p-3 w-12"><input type="checkbox" id="select-all-results" class="form-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded"></th>
+                        <th scope="col" class="p-3 w-16">序号</th>
+                        <th scope="col" class="p-3 w-2/5">名称</th>
+                        <th scope="col" class="p-3 w-24">状态</th>
+                        <th scope="col" class="p-3 w-24">审核人</th>
+                        <th scope="col" class="p-3 w-24">创建人</th>
+                        <th scope="col" class="p-3 w-32">创建日期</th>
+                        <th scope="col" class="p-3 w-28 text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table-body">
+                    <!-- Rows will be populated by JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="pagination-controls" class="mt-6 flex justify-center items-center space-x-1">
+            <!-- Pagination will be populated by JS -->
+        </div>
+    </div>
+
+    <script>
+        const mockResultsData = [
+            { id: "res001", name: "白芍文献1的有效成分及药理作用分析结果", status: "approved", reviewer: "张三", creator: "李四", createdDate: "2025-02-15", originalDoc: "sample_doc1.pdf" },
+            { id: "res002", name: "白芍文献2的核心观点提炼", status: "pending", reviewer: "王五", creator: "赵六", createdDate: "2025-02-18", originalDoc: "sample_doc2.pdf" },
+            { id: "res003", name: "综述：IBD治疗中草药应用前景分析", status: "rejected", reviewer: "钱七", creator: "孙八", createdDate: "2025-01-20", originalDoc: "sample_doc3.pdf" },
+            { id: "res004", name: "北豆根化学成分研究进展摘要", status: "approved", reviewer: "周吴", creator: "郑王", createdDate: "2025-03-01", originalDoc: "sample_doc4.pdf" },
+            { id: "res005", name: "巴豆相关毒理学研究数据提取", status: "pending", reviewer: "冯陈", creator: "褚卫", createdDate: "2025-03-05", originalDoc: "sample_doc5.pdf" },
+        ];
+
+        const resultsTableBody = document.getElementById('results-table-body');
+        const paginationControls = document.getElementById('pagination-controls');
+        const itemsPerPage = 10; // Can be adjusted
+        let currentPage = 1;
+        let currentFilter = 'all';
+        let currentSearchTerm = '';
+
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'pending': return '<span class="status-badge status-pending">待审核</span>';
+                case 'approved': return '<span class="status-badge status-approved">审核通过</span>';
+                case 'rejected': return '<span class="status-badge status-rejected">审核不通过</span>';
+                default: return `<span class="status-badge">${status}</span>`;
+            }
+        }
+        
+        function openResultDetail(resultId, resultName) {
+            if (window.parent && window.parent.openTab) {
+                window.parent.openTab(`结果: ${resultName.substring(0,20)}...`, `results_detail.html?id=${encodeURIComponent(resultId)}`);
+            } else {
+                window.location.href = `results_detail.html?id=${encodeURIComponent(resultId)}`;
+            }
+        }
+
+        function renderTable() {
+            resultsTableBody.innerHTML = '';
+            const filteredData = mockResultsData.filter(item => {
+                const matchesFilter = currentFilter === 'all' || item.status === currentFilter;
+                const matchesSearch = currentSearchTerm === '' || item.name.toLowerCase().includes(currentSearchTerm.toLowerCase());
+                return matchesFilter && matchesSearch;
+            });
+
+            const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            if (paginatedData.length === 0) {
+                resultsTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-500">没有找到符合条件的结果。</td></tr>`;
+                renderPagination(0);
+                return;
+            }
+
+            paginatedData.forEach((item, index) => {
+                const row = `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="p-3"><input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded result-checkbox" data-id="${item.id}"></td>
+                        <td class="p-3 text-slate-600">${(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td class="p-3 font-medium text-slate-900 hover:text-blue-600 cursor-pointer truncate" title="${item.name}" onclick="openResultDetail('${item.id}', '${item.name.replace(/'/g, "\\'")}')">${item.name}</td>
+                        <td class="p-3">${getStatusBadge(item.status)}</td>
+                        <td class="p-3 text-slate-600">${item.reviewer}</td>
+                        <td class="p-3 text-slate-600">${item.creator}</td>
+                        <td class="p-3 text-slate-600">${item.createdDate}</td>
+                        <td class="p-3 text-center relative">
+                            <button class="text-blue-600 hover:text-blue-800 action-dropdown-toggle"><i class="fas fa-ellipsis-v"></i></button>
+                            <div class="action-menu hidden bg-white border border-slate-200 rounded-md shadow-lg py-1 w-28">
+                                <a href="#" onclick="openResultDetail('${item.id}', '${item.name.replace(/'/g, "\\'")}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">查看</a>
+                                <a href="#" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">导出</a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                resultsTableBody.innerHTML += row;
+            });
+            renderPagination(filteredData.length);
+            attachActionMenuListeners();
+        }
+
+        function renderPagination(totalItems) {
+            paginationControls.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            if (totalPages <= 1) return;
+
+            // Previous Button
+            paginationControls.innerHTML += `<button data-page="${currentPage - 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === 1 ? 'disabled' : ''}>&lt; Previous</button>`;
+            
+            // Page Numbers
+            for (let i = 1; i <= totalPages; i++) {
+                paginationControls.innerHTML += `<button data-page="${i}" class="px-3 py-1 text-sm rounded-md ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}">${i}</button>`;
+            }
+
+            // Next Button
+            paginationControls.innerHTML += `<button data-page="${currentPage + 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === totalPages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === totalPages ? 'disabled' : ''}>Next &gt;</button>`;
+            
+            document.querySelectorAll('#pagination-controls button[data-page]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    currentPage = parseInt(e.currentTarget.dataset.page);
+                    renderTable();
+                });
+            });
+        }
+        
+        function attachActionMenuListeners() {
+            document.querySelectorAll('.action-dropdown-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    // Hide all other open menus
+                    document.querySelectorAll('.action-menu').forEach(m => {
+                        if (m !== this.nextElementSibling) m.classList.add('hidden');
+                    });
+                    this.nextElementSibling.classList.toggle('hidden');
+                });
+            });
+        }
+        
+        document.addEventListener('click', (event) => {
+            // Hide action menus if clicked outside
+            if (!event.target.closest('.action-dropdown-toggle') && !event.target.closest('.action-menu')) {
+                document.querySelectorAll('.action-menu').forEach(menu => menu.classList.add('hidden'));
+            }
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'active');
+                    btn.classList.add('bg-slate-200', 'text-slate-700');
+                });
+                e.target.classList.add('bg-blue-600', 'text-white', 'active');
+                e.target.classList.remove('bg-slate-200', 'text-slate-700');
+                currentFilter = e.target.dataset.filter;
+                currentPage = 1;
+                renderTable();
+            });
+        });
+
+        document.getElementById('search-results').addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            currentPage = 1;
+            renderTable();
+        });
+        
+        document.getElementById('select-all-results').addEventListener('change', function(e) {
+            document.querySelectorAll('.result-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // Initial render
+        renderTable();
+    </script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示词详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+        .version-item.active { background-color: #e0f2fe; /* sky-100 */ border-left-color: #0ea5e9; /* sky-500 */ }
+        .content-display { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans">
+    <div class="container mx-auto p-4 md:p-6">
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+            <!-- Header Section -->
+            <header class="bg-slate-50 p-4 sm:p-6 border-b border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center">
+                    <h1 id="prompt-main-title" class="text-2xl font-semibold text-slate-800 mb-2 sm:mb-0">加载中...</h1>
+                    <div id="prompt-actions" class="flex items-center space-x-2">
+                        <!-- Actions like Edit, Copy will be dynamically added if applicable -->
+                    </div>
+                </div>
+                <p id="prompt-type-badge" class="text-xs mt-1"></p>
+            </header>
+
+            <!-- Main Content: Details and History -->
+            <div class="flex flex-col md:flex-row">
+                <!-- Left Pane: Prompt Content Details -->
+                <div class="w-full md:w-2/3 p-4 sm:p-6 border-b md:border-b-0 md:border-r border-slate-200">
+                    <div class="mb-6">
+                        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">版本信息</h2>
+                        <p id="prompt-version-info" class="text-sm text-slate-700">版本: -, 更新于: -</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">提示词内容</h2>
+                        <pre id="prompt-content-display" class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md custom-scrollbar max-h-80 overflow-y-auto content-display">加载中...</pre>
+                    </div>
+
+                    <div class="mb-6">
+                        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">描述</h2>
+                        <p id="prompt-description-display" class="text-sm text-slate-600 italic content-display">加载中...</p>
+                    </div>
+
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">标签</h2>
+                        <div id="prompt-tags-display" class="flex flex-wrap gap-2">
+                            <span class="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Pane: Version History -->
+                <aside class="w-full md:w-1/3 p-4 sm:p-6 bg-slate-50/50">
+                    <h2 class="text-base font-semibold text-slate-700 mb-3 border-b pb-2">版本历史</h2>
+                    <div id="version-history-list" class="space-y-2 custom-scrollbar max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
+                        <!-- Version items will be populated by JS -->
+                        <p class="text-sm text-slate-500">暂无历史版本或加载中...</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data store - In a real app, this comes from backend/parent window
+        const mockPromptDataStore = {
+            "system-generic-assistant": {
+                title: "通用回答助手",
+                type: "system",
+                versions: [
+                    { version: "v1.2", date: "2024-03-15", content: "这是一个系统内置的基础提示词，用于生成对用户各种常见问题的友好、信息量大且中立的回答。它旨在提供一个结构化的起点，可以根据具体需求进行微调。", description: "针对一般性问题提供标准回答模板。优化了响应速度。", tags: ["通用", "问答"] },
+                    { version: "v1.1", date: "2024-02-20", content: "系统内置基础提示词，用于生成友好回答。调整了语气。", description: "一般性问题标准回答模板。", tags: ["通用"] },
+                    { version: "v1.0", date: "2023-12-01", content: "初始版本。", description: "基础模板。", tags: [] }
+                ]
+            },
+            "user-ibd-summary": {
+                title: "IBD文献摘要生成",
+                type: "user",
+                versions: [
+                    { version: "v2.1", date: "2024-03-10", content: "根据提供的IBD（炎症性肠病）相关文献，提取关键信息，包括研究目的、方法、主要发现和结论，生成一段不超过300字且易于理解的摘要。最新优化。", description: "快速生成IBD文献的核心内容摘要。", tags: ["学术研究", "IBD", "摘要"] },
+                    { version: "v2.0", date: "2024-03-01", content: "根据IBD文献，提取关键信息，包括目的、方法、发现和结论，生成300字摘要。增加关键词提取。", description: "IBD文献核心内容摘要。", tags: ["学术研究", "IBD"] },
+                    { version: "v1.0", date: "2024-01-15", content: "为IBD文献生成摘要。", description: "初步摘要功能。", tags: ["学术研究"] }
+                ]
+            },
+            // A prompt that might be newly created and in the list but not in detail store yet
+             "user-prompt-1699872000000": { // Example ID from prompt_management modal save
+                title: "新创建的测试提示词",
+                type: "user",
+                versions: [
+                    { version: "v1.0", date: "2024-07-29", content: "这是一个新创建的提示词内容。", description: "新提示词的描述。", tags: ["通用", "测试"] }
+                ]
+            }
+        };
+        
+        const availableTagsMap = { // from prompt_management.html for display consistency
+            "general": "通用", "coding": "编程辅助", "writing": "内容写作", 
+            "analysis": "数据分析", "research": "学术研究", "ibd": "IBD", 
+            "summary": "摘要", "translation": "翻译", "测试": "测试"
+        };
+
+
+        const promptMainTitle = document.getElementById('prompt-main-title');
+        const promptVersionInfo = document.getElementById('prompt-version-info');
+        const promptContentDisplay = document.getElementById('prompt-content-display');
+        const promptDescriptionDisplay = document.getElementById('prompt-description-display');
+        const promptTagsDisplay = document.getElementById('prompt-tags-display');
+        const versionHistoryList = document.getElementById('version-history-list');
+        const promptActionsContainer = document.getElementById('prompt-actions');
+        const promptTypeBadge = document.getElementById('prompt-type-badge');
+
+        let currentPromptId = null;
+        let currentPromptData = null;
+
+        function displayPromptVersion(versionData) {
+            promptVersionInfo.textContent = `版本: ${versionData.version} | 更新于: ${versionData.date}`;
+            promptContentDisplay.textContent = versionData.content;
+            promptDescriptionDisplay.textContent = versionData.description || "无描述";
+            
+            promptTagsDisplay.innerHTML = '';
+            if (versionData.tags && versionData.tags.length > 0) {
+                versionData.tags.forEach(tag => {
+                    const tagName = availableTagsMap[tag.toLowerCase()] || tag;
+                    promptTagsDisplay.innerHTML += `<span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">${tagName}</span>`;
+                });
+            } else {
+                promptTagsDisplay.innerHTML = `<span class="text-xs text-slate-500 italic">无标签</span>`;
+            }
+        }
+
+        function loadPromptDetails(promptId) {
+            currentPromptId = promptId;
+            // Try to get data from parent if possible (more robust for newly created items)
+            let dataFromParentList;
+            if (window.parent && window.parent.frames['content-frame'] && window.parent.frames['content-frame'].contentWindow && window.parent.frames['content-frame'].contentWindow.mockPrompts) {
+                 dataFromParentList = window.parent.frames['content-frame'].contentWindow.mockPrompts[promptId];
+            }
+            
+            currentPromptData = dataFromParentList || mockPromptDataStore[promptId];
+
+            if (!currentPromptData || !currentPromptData.versions || currentPromptData.versions.length === 0) {
+                promptMainTitle.textContent = "未找到提示词";
+                promptContentDisplay.textContent = "无法加载提示词详情。";
+                versionHistoryList.innerHTML = '<p class="text-sm text-slate-500">无法加载版本历史。</p>';
+                return;
+            }
+
+            promptMainTitle.textContent = currentPromptData.title;
+            
+            promptTypeBadge.innerHTML = `<span class="text-xs ${currentPromptData.type === 'system' ? 'bg-sky-100 text-sky-700' : 'bg-purple-100 text-purple-700'} px-2 py-0.5 rounded-full font-medium">${currentPromptData.type === 'system' ? '系统提示词' : '我的提示词'}</span>`;
+
+
+            // Display latest version initially
+            const latestVersion = currentPromptData.versions[0];
+            displayPromptVersion(latestVersion);
+
+            // Populate version history
+            versionHistoryList.innerHTML = '';
+            currentPromptData.versions.forEach((version, index) => {
+                const versionItem = document.createElement('div');
+                versionItem.className = `version-item p-3 border-l-4 border-transparent hover:bg-slate-200 cursor-pointer rounded-r-md ${index === 0 ? 'active' : ''}`;
+                versionItem.innerHTML = `
+                    <p class="font-medium text-sm text-slate-700">版本 ${version.version}</p>
+                    <p class="text-xs text-slate-500">${version.date}</p>
+                    <p class="text-xs text-slate-600 mt-1 truncate" title="${version.description}">${version.description || '无描述'}</p>
+                `;
+                versionItem.addEventListener('click', () => {
+                    displayPromptVersion(version);
+                    document.querySelectorAll('#version-history-list .version-item').forEach(item => item.classList.remove('active'));
+                    versionItem.classList.add('active');
+                });
+                versionHistoryList.appendChild(versionItem);
+            });
+            
+            // Setup actions
+            promptActionsContainer.innerHTML = '';
+            const copyBtn = document.createElement('button');
+            copyBtn.className = "text-slate-500 hover:text-blue-600 p-2 rounded-md text-sm flex items-center";
+            copyBtn.innerHTML = `<i class="fas fa-copy mr-1"></i> 复制当前内容`;
+            copyBtn.title = "复制当前显示版本的提示词内容";
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(promptContentDisplay.textContent)
+                    .then(() => alert('当前版本内容已复制!'))
+                    .catch(err => console.error('复制失败:', err));
+            };
+            promptActionsContainer.appendChild(copyBtn);
+
+            if (currentPromptData.type === 'user') {
+                const editBtn = document.createElement('button');
+                editBtn.className = "bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1.5 px-3 rounded-md flex items-center";
+                editBtn.innerHTML = `<i class="fas fa-pencil-alt mr-1.5"></i> 编辑最新版本`;
+                editBtn.onclick = () => {
+                    // This would ideally open the modal from prompt_management.html in the parent context
+                    // or navigate to an edit page.
+                    if (window.parent && window.parent.frames['content-frame'] && window.parent.frames['content-frame'].contentWindow.showAddEditModal) {
+                         // We need to ensure prompt_management.html is loaded in the iframe to access its showAddEditModal
+                         // This direct call might not work if prompt_management.html isn't the current iframe content.
+                         // A more robust solution would involve messaging or ensuring the modal logic is accessible globally or via parent.
+                         alert("编辑功能需要 `prompt_management.html` 的 `showAddEditModal` 函数在父级 iframe 环境中可用。");
+                         // Example of how it *could* be called if prompt_management.html was the active iframe:
+                         // window.parent.frames['content-frame'].contentWindow.showAddEditModal(true, currentPromptId, currentPromptData.title);
+                    } else {
+                        alert('编辑功能 (模拟): ' + currentPromptData.title);
+                    }
+                };
+                promptActionsContainer.appendChild(editBtn);
+            }
+
+        }
+
+        // Get prompt ID from URL and load details
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const promptIdFromUrl = urlParams.get('id');
+            if (promptIdFromUrl) {
+                loadPromptDetails(decodeURIComponent(promptIdFromUrl));
+            } else {
+                promptMainTitle.textContent = "无效的提示词ID";
+                promptContentDisplay.textContent = "请提供一个有效的提示词ID。";
+            }
+        });
+    </script>
+</body>
+</html>

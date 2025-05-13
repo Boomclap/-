@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示词管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+        .tab-btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s ease-in-out; border: 1px solid transparent; }
+        .tab-btn:hover { background-color: #e2e8f0; }
+        .active-tab-btn { background-color: #e0f2fe; color: #0ea5e9; border-color: #7dd3fc; }
+        .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+        .modal-content { max-height: 85vh; }
+        .prompt-title-link { cursor: pointer; }
+        .prompt-title-link:hover { color: #2563eb; /* Tailwind's blue-600 */ text-decoration: underline; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans">
+
+    <div class="container mx-auto p-4 md:p-6">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between md:items-center mb-6">
+            <h1 class="text-2xl font-semibold text-slate-800 mb-4 md:mb-0">提示词管理</h1>
+            <button id="add-prompt-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center text-sm shadow-md hover:shadow-lg transition-shadow">
+                <i class="fas fa-plus mr-2"></i> 新建提示词
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="mb-6 bg-white p-4 rounded-lg shadow">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="search-prompt" class="block text-sm font-medium text-slate-700 mb-1">搜索提示词</label>
+                    <div class="relative">
+                        <input type="text" id="search-prompt" placeholder="按标题、内容或描述搜索..." class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+                        <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                </div>
+                <div>
+                    <label for="tag-filter" class="block text-sm font-medium text-slate-700 mb-1">标签筛选</label>
+                    <select id="tag-filter" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white">
+                        <option value="">所有标签</option>
+                        <option value="general">通用</option>
+                        <option value="coding">编程辅助</option>
+                        <option value="writing">内容写作</option>
+                        <option value="analysis">数据分析</option>
+                        <option value="research">学术研究</option>
+                        <option value="ibd">IBD</option>
+                        <option value="summary">摘要</option>
+                    </select>
+                </div>
+                <div>
+                    <span class="block text-sm font-medium text-slate-700 mb-1">类型</span>
+                    <div class="flex space-x-1 sm:space-x-2 bg-slate-100 p-0.5 rounded-md">
+                        <button class="tab-btn active-tab-btn flex-1" data-filter="all">全部</button>
+                        <button class="tab-btn flex-1" data-filter="system">系统</button>
+                        <button class="tab-btn flex-1" data-filter="user">我的</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompts Grid -->
+        <div id="prompt-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Sample Prompt Card 1 (System) -->
+            <div class="prompt-card bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between transition-all hover:shadow-xl transform hover:-translate-y-1" data-prompt-id="system-generic-assistant" data-prompt-title="通用回答助手">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-base font-semibold text-slate-800 leading-tight prompt-title-link" onclick="viewPromptDetails('system-generic-assistant', '通用回答助手')">通用回答助手</h3>
+                        <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">系统</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-1">版本: v1.2</p>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3" title="这是一个系统内置的基础提示词，用于生成对用户各种常见问题的友好、信息量大且中立的回答。它旨在提供一个结构化的起点，可以根据具体需求进行微调。">
+                        这是一个系统内置的基础提示词，用于生成对用户各种常见问题的友好、信息量大且中立的回答。它旨在提供一个结构化的起点，可以根据具体需求进行微调。
+                    </p>
+                    <div class="mb-3">
+                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">通用</span>
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">问答</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3 italic">描述: 针对一般性问题提供标准回答模板。</p>
+                </div>
+                <div class="border-t border-slate-200 pt-3 mt-auto">
+                    <div class="flex justify-end space-x-2 text-sm">
+                        <button title="复制提示词内容" class="prompt-action-btn text-slate-500 hover:text-blue-600"><i class="fas fa-copy"></i></button>
+                        <button title="系统提示词不可编辑" class="text-slate-300 cursor-not-allowed" disabled><i class="fas fa-pencil-alt"></i></button>
+                        <button title="系统提示词不可删除" class="text-slate-300 cursor-not-allowed" disabled><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Prompt Card 2 (User) -->
+            <div class="prompt-card bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between transition-all hover:shadow-xl transform hover:-translate-y-1" data-prompt-id="user-ibd-summary" data-prompt-title="IBD文献摘要生成">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-base font-semibold text-slate-800 leading-tight prompt-title-link" onclick="viewPromptDetails('user-ibd-summary', 'IBD文献摘要生成')">IBD文献摘要生成</h3>
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">我的</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-1">版本: v2.1 <span class="text-slate-400">(最新)</span></p>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3" title="根据提供的IBD（炎症性肠病）相关文献，提取关键信息，包括研究目的、方法、主要发现和结论，生成一段不超过300字且易于理解的摘要。">
+                        根据提供的IBD（炎症性肠病）相关文献，提取关键信息，包括研究目的、方法、主要发现和结论，生成一段不超过300字且易于理解的摘要。
+                    </p>
+                    <div class="mb-3">
+                        <span class="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">学术研究</span>
+                        <span class="bg-pink-100 text-pink-700 text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">IBD</span>
+                        <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">摘要</span>
+                    </div>
+                     <p class="text-xs text-slate-500 mb-3 italic">描述: 快速生成IBD文献的核心内容摘要。</p>
+                </div>
+                <div class="border-t border-slate-200 pt-3 mt-auto">
+                    <div class="flex justify-end space-x-2 text-sm">
+                        <button title="复制提示词内容" class="prompt-action-btn text-slate-500 hover:text-blue-600"><i class="fas fa-copy"></i></button>
+                        <button title="编辑提示词" class="prompt-action-btn text-slate-500 hover:text-green-600" onclick="event.stopPropagation(); showAddEditModal(true, 'user-ibd-summary', 'IBD文献摘要生成');"><i class="fas fa-pencil-alt"></i></button>
+                        <button title="删除提示词" class="prompt-action-btn text-slate-500 hover:text-red-600" onclick="event.stopPropagation(); if(confirm('确定删除此提示词吗？')) { deletePrompt('user-ibd-summary'); } else { return false; }"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Prompt Modal -->
+    <div id="add-edit-prompt-modal" class="fixed inset-0 bg-gray-800 bg-opacity-60 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center hidden z-50 p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl modal-content custom-scrollbar overflow-y-auto">
+            <div class="sticky top-0 bg-white px-6 py-4 border-b border-slate-200 z-10">
+                <h3 id="modal-title" class="text-lg font-semibold text-slate-800">新建提示词</h3>
+                <button onclick="closeModal('add-edit-prompt-modal')" class="absolute top-4 right-4 text-slate-500 hover:text-slate-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="prompt-form" class="p-6 space-y-4">
+                <input type="hidden" id="prompt-id-edit" name="promptId">
+                <div>
+                    <label for="prompt-title" class="block text-sm font-medium text-slate-700 mb-1">标题 <span class="text-red-500">*</span></label>
+                    <input type="text" id="prompt-title" name="title" required class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" placeholder="例如：文献摘要生成器">
+                </div>
+                <div>
+                    <label for="prompt-content" class="block text-sm font-medium text-slate-700 mb-1">提示词内容 <span class="text-red-500">*</span></label>
+                    <textarea id="prompt-content" name="content" rows="6" required class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm custom-scrollbar" placeholder="请输入详细的提示词指令..."></textarea>
+                </div>
+                <div>
+                    <label for="prompt-description" class="block text-sm font-medium text-slate-700 mb-1">描述</label>
+                    <textarea id="prompt-description" name="description" rows="3" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm custom-scrollbar" placeholder="简要说明该提示词的用途和特点..."></textarea>
+                </div>
+                <div>
+                    <label for="prompt-version" class="block text-sm font-medium text-slate-700 mb-1">版本</label>
+                    <input type="text" id="prompt-version" name="version" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" placeholder="例如：v1.0 (不填则自动处理)">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">标签 (选择已有标签)</label>
+                    <div id="prompt-tags-container" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar border border-slate-300 p-3 rounded-md bg-slate-50">
+                        <!-- Tags will be populated by JS -->
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">提示: 在真实系统中，您还可以在此添加新标签。</p>
+                </div>
+                <div class="pt-4 flex justify-end space-x-3 sticky bottom-0 bg-white py-4 px-6 border-t border-slate-200">
+                    <button type="button" onclick="closeModal('add-edit-prompt-modal')" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg shadow-sm transition-colors">保存提示词</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const addPromptBtn = document.getElementById('add-prompt-btn');
+        const addEditModal = document.getElementById('add-edit-prompt-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const promptForm = document.getElementById('prompt-form');
+        const promptTagsContainer = document.getElementById('prompt-tags-container');
+        
+        const availableTags = [
+            { id: "general", name: "通用" }, { id: "coding", name: "编程辅助" },
+            { id: "writing", name: "内容写作" }, { id: "analysis", name: "数据分析" },
+            { id: "research", name: "学术研究" }, { id: "ibd", name: "IBD" },
+            { id: "summary", name: "摘要" }, { id: "translation", name: "翻译" }
+        ];
+
+        let mockPrompts = { // Changed to let for modification
+            "system-generic-assistant": {
+                title: "通用回答助手",
+                content: "这是一个系统内置的基础提示词，用于生成对用户各种常见问题的友好、信息量大且中立的回答。它旨在提供一个结构化的起点，可以根据具体需求进行微调。",
+                description: "针对一般性问题提供标准回答模板。",
+                version: "v1.2",
+                tags: ["general", "问答"],
+                type: "system"
+            },
+            "user-ibd-summary": {
+                title: "IBD文献摘要生成",
+                content: "根据提供的IBD（炎症性肠病）相关文献，提取关键信息，包括研究目的、方法、主要发现和结论，生成一段不超过300字且易于理解的摘要。",
+                description: "快速生成IBD文献的核心内容摘要。",
+                version: "v2.1",
+                tags: ["research", "ibd", "summary"],
+                type: "user"
+            }
+        };
+
+        function populateTagsCheckboxes(selectedTags = []) {
+            promptTagsContainer.innerHTML = '';
+            availableTags.forEach(tag => {
+                const isChecked = selectedTags.includes(tag.id) || selectedTags.includes(tag.name);
+                promptTagsContainer.innerHTML += `
+                    <label class="flex items-center space-x-2 text-sm hover:bg-slate-100 p-1 rounded">
+                        <input type="checkbox" name="tags" value="${tag.id}" ${isChecked ? 'checked' : ''}
+                               class="form-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                        <span>${tag.name}</span>
+                    </label>
+                `;
+            });
+            if (promptTagsContainer.innerHTML === '') {
+                promptTagsContainer.innerHTML = '<p class="text-sm text-slate-500">暂无可用标签。</p>';
+            }
+        }
+        
+        function viewPromptDetails(promptId, promptTitle) {
+            if (window.parent && typeof window.parent.openTab === 'function') {
+                window.parent.openTab(
+                    `提示词详情: ${promptTitle}`, 
+                    `prompt_detail.html?id=${encodeURIComponent(promptId)}&title=${encodeURIComponent(promptTitle)}`
+                );
+            } else {
+                console.error('无法访问父窗口的 openTab 函数');
+            }
+        }
+
+        function showAddEditModal(isEdit = false, promptId = '', promptTitleFromCard = '') { // Use promptTitleFromCard for consistency
+            promptForm.reset();
+            document.getElementById('prompt-id-edit').value = '';
+            
+            if (isEdit && mockPrompts[promptId]) {
+                const pData = mockPrompts[promptId];
+                modalTitle.textContent = `编辑提示词: ${pData.title}`; // Use title from data for accuracy
+                document.getElementById('prompt-id-edit').value = promptId;
+                document.getElementById('prompt-title').value = pData.title;
+                document.getElementById('prompt-content').value = pData.content;
+                document.getElementById('prompt-description').value = pData.description;
+                document.getElementById('prompt-version').value = pData.version;
+                populateTagsCheckboxes(pData.tags);
+            } else {
+                modalTitle.textContent = '新建提示词';
+                populateTagsCheckboxes([]);
+            }
+            addEditModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        addPromptBtn.addEventListener('click', () => showAddEditModal());
+
+        promptForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const selectedTags = Array.from(this.querySelectorAll('input[name="tags"]:checked')).map(cb => cb.value);
+            const editingId = this['prompt-id-edit'].value;
+            const formData = {
+                id: editingId || `user-prompt-${Date.now()}`,
+                title: this.title.value,
+                content: this.content.value,
+                description: this.description.value,
+                version: this.version.value || (editingId && mockPrompts[editingId] ? mockPrompts[editingId].version : 'v1.0'), // Preserve version on edit if not changed
+                tags: selectedTags,
+                type: editingId && mockPrompts[editingId] ? mockPrompts[editingId].type : 'user' // Preserve type on edit
+            };
+            
+            mockPrompts[formData.id] = formData; 
+            alert('提示词已保存 (模拟)!');
+            closeModal('add-edit-prompt-modal');
+            renderPromptCards(); 
+        });
+        
+        function attachCopyButtonListeners() {
+            document.querySelectorAll('.prompt-action-btn[title="复制提示词内容"]').forEach(button => {
+                // Remove old listener to prevent multiple attachments if any
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                newButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    const card = e.target.closest('.prompt-card');
+                    const promptId = card.dataset.promptId;
+                    const promptData = mockPrompts[promptId];
+                    if (promptData && promptData.content) {
+                        navigator.clipboard.writeText(promptData.content)
+                            .then(() => alert(`提示词 "${promptData.title}" 的内容已复制到剪贴板！`))
+                            .catch(err => console.error('无法复制内容: ', err));
+                    } else {
+                        alert('找不到要复制的提示词内容。');
+                    }
+                });
+            });
+        }
+
+
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active-tab-btn'));
+                button.classList.add('active-tab-btn');
+                const filterType = button.dataset.filter;
+                renderPromptCards(filterType);
+            });
+        });
+
+        function renderPromptCard(promptId, pData) {
+            const escapedTitle = pData.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const cardHTML = `
+            <div class="prompt-card bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between transition-all hover:shadow-xl transform hover:-translate-y-1" data-prompt-id="${promptId}" data-prompt-title="${escapedTitle}">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-base font-semibold text-slate-800 leading-tight prompt-title-link" onclick="viewPromptDetails('${promptId}', '${escapedTitle}')">${pData.title}</h3>
+                        <span class="text-xs ${pData.type === 'system' ? 'bg-sky-100 text-sky-700' : 'bg-purple-100 text-purple-700'} px-2 py-0.5 rounded-full font-medium">${pData.type === 'system' ? '系统' : '我的'}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-1">版本: ${pData.version} ${pData.type === 'user' ? '<span class="text-slate-400">(最新)</span>' : ''}</p>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3" title="${pData.content.replace(/"/g, '&quot;')}">
+                        ${pData.content}
+                    </p>
+                    <div class="mb-3">
+                        ${pData.tags.map(tag => {
+                            const tagInfo = availableTags.find(t => t.id === tag || t.name === tag);
+                            const tagName = tagInfo ? tagInfo.name : tag;
+                            // Simple heuristic for color, can be expanded
+                            let tagBgColor = 'bg-gray-100 text-gray-700';
+                            if (tagInfo && ['research', 'ibd'].includes(tagInfo.id)) tagBgColor = 'bg-indigo-100 text-indigo-700';
+                            else if (tagInfo && ['summary'].includes(tagInfo.id)) tagBgColor = 'bg-yellow-100 text-yellow-700';
+                            else if (tagInfo && ['general'].includes(tagInfo.id)) tagBgColor = 'bg-blue-100 text-blue-700';
+                            
+                            return `<span class="${tagBgColor} text-xs px-2 py-1 rounded-full mr-1 mb-1 inline-block font-medium">${tagName}</span>`;
+                        }).join('')}
+                    </div>
+                     <p class="text-xs text-slate-500 mb-3 italic">描述: ${pData.description}</p>
+                </div>
+                <div class="border-t border-slate-200 pt-3 mt-auto">
+                    <div class="flex justify-end space-x-2 text-sm">
+                        <button title="复制提示词内容" class="prompt-action-btn text-slate-500 hover:text-blue-600"><i class="fas fa-copy"></i></button>
+                        ${pData.type === 'user' ? `
+                        <button title="编辑提示词" class="prompt-action-btn text-slate-500 hover:text-green-600" onclick="event.stopPropagation(); showAddEditModal(true, '${promptId}', '${escapedTitle}');"><i class="fas fa-pencil-alt"></i></button>
+                        <button title="删除提示词" class="prompt-action-btn text-slate-500 hover:text-red-600" onclick="event.stopPropagation(); if(confirm('确定删除 \\'${escapedTitle}\\' 此提示词吗？')) { deletePrompt('${promptId}'); } else { return false; }"><i class="fas fa-trash-alt"></i></button>
+                        ` : `
+                        <button title="系统提示词不可编辑" class="text-slate-300 cursor-not-allowed" disabled><i class="fas fa-pencil-alt"></i></button>
+                        <button title="系统提示词不可删除" class="text-slate-300 cursor-not-allowed" disabled><i class="fas fa-trash-alt"></i></button>
+                        `}
+                    </div>
+                </div>
+            </div>`;
+            return cardHTML;
+        }
+        
+        function deletePrompt(promptId) {
+            if (mockPrompts[promptId]) {
+                delete mockPrompts[promptId];
+                renderPromptCards(document.querySelector('.tab-btn.active-tab-btn')?.dataset.filter || 'all'); // Re-render with current filter
+                alert("提示词已删除 (模拟)");
+            }
+        }
+
+        function renderPromptCards(filterType = 'all') {
+            const promptListContainer = document.getElementById('prompt-list');
+            promptListContainer.innerHTML = ''; 
+            
+            let hasVisiblePrompts = false;
+            Object.entries(mockPrompts).forEach(([id, data]) => {
+                if (filterType === 'all' || data.type === filterType) {
+                    promptListContainer.innerHTML += renderPromptCard(id, data);
+                    hasVisiblePrompts = true;
+                }
+            });
+
+            if (!hasVisiblePrompts) {
+                 promptListContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 py-8">没有符合条件的提示词。</p>`;
+            }
+            attachCopyButtonListeners(); // Re-attach listeners for copy buttons
+        }
+        
+        // Initial render
+        renderPromptCards();
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                if (!addEditModal.classList.contains('hidden')) {
+                    closeModal('add-edit-prompt-modal');
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
