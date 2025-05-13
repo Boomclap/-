@@ -20,47 +20,89 @@
         #original-doc-iframe { min-height: calc(100vh - 150px); }
         .pane-transition { transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
 
-        .source-ref { /* ... (same as before) ... */
-            font-size: 0.7em; font-weight: 600; padding: 0.5px 2.5px; border-radius: 3px;
-            background-color: #e0e7ff; color: #3730a3; cursor: pointer;
-            margin-left: 2px; vertical-align: super; line-height: 1; position: relative; 
+        .inferred-highlight {
+            /* Optional styling for the text part */
+        }
+        .source-ref {
+            font-size: 0.7em; 
+            font-weight: 600;
+            padding: 0.5px 2.5px;
+            border-radius: 3px;
+            background-color: #e0e7ff; 
+            color: #3730a3; 
+            cursor: pointer;
+            margin-left: 2px;
+            vertical-align: super;
+            line-height: 1; 
+            position: relative; 
             transition: background-color 0.2s, color 0.2s;
         }
-        .source-ref:hover, .source-ref:focus-visible { background-color: #3730a3; color: white; outline: none; }
-        
+        .source-ref:hover, .source-ref:focus-visible {
+            background-color: #3730a3; 
+            color: white;
+            outline: none;
+        }
         .ref-tooltip {
-            visibility: hidden; width: 320px; background-color: #1f2937; 
-            color: #f9fafb; text-align: left; border-radius: 6px;
-            padding: 10px 12px; position: absolute; z-index: 999; /* Increased z-index */
-            bottom: 160%; left: 50%; transform: translateX(-50%);
-            opacity: 0; transition: opacity 0.2s, visibility 0.2s;
-            font-size: 0.78rem; line-height: 1.5; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            visibility: hidden;
+            width: 320px;
+            background-color: #2d3748; 
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px 12px;
+            position: absolute;
+            z-index: 60; 
+            bottom: 160%; 
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             pointer-events: none; 
         }
-        .source-ref:hover .ref-tooltip, .source-ref:focus-visible .ref-tooltip { visibility: visible; opacity: 1; pointer-events: auto; }
-        .ref-tooltip::after { /* ... (same as before) ... */
-            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px;
-            border-width: 6px; border-style: solid; border-color: #1f2937 transparent transparent transparent;
+        .source-ref:hover .ref-tooltip, .source-ref:focus-visible .ref-tooltip {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
         }
-        .ref-tooltip strong { color: #9ca3af; display: block; margin-bottom: 3px;}
-        .ref-tooltip a { color: #60a5fa; text-decoration: underline; }
-        .ref-tooltip a:hover { color: #93c5fd; }
-        .ref-tooltip .source-text-snippet { /* ... (same as before) ... */
+        .ref-tooltip::after { 
+            content: ""; position: absolute; top: 100%; left: 50%;
+            margin-left: -6px; border-width: 6px; border-style: solid;
+            border-color: #2d3748 transparent transparent transparent;
+        }
+        .ref-tooltip strong { color: #a0aec0; display: block; margin-bottom: 3px;}
+        .ref-tooltip a { color: #63b3ed; text-decoration: underline; }
+        .ref-tooltip a:hover { color: #90cdf4; }
+        .ref-tooltip .source-text-snippet { 
             display: block; background-color: #4a5568; padding: 5px; border-radius: 3px; margin-top: 4px;
             max-height: 60px; overflow-y: auto; font-style: italic; font-size: 0.75rem;
         }
 
-        .collapsible-panel { transition: max-height 0.35s cubic-bezier(0.25, 0.1, 0.25, 1); overflow: hidden; }
-        .collapsible-panel.collapsed { max-height: 0px !important; padding-top: 0 !important; padding-bottom: 0 !important; border-top-width: 0 !important; margin-bottom: 0 !important; }
-        
-        #source-list-panel { max-height: 250px; /* Increased default visible height */ }
-        #version-history-panel { max-height: 200px; /* Default visible height for version history */ }
+        #source-list-panel { max-height: 200px; transition: max-height 0.3s ease-out; }
+        #source-list-panel.collapsed { max-height: 0px !important; padding-top: 0 !important; padding-bottom: 0 !important; border-top-width: 0 !important; margin-bottom: 0 !important; overflow: hidden; }
+        .source-list-item { cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: background-color 0.2s; }
+        .source-list-item:hover, .source-list-item.highlighted { background-color: #e0f2fe; } 
+        .source-list-item .ref-number { font-weight: 600; color: #3730a3; }
 
-        .source-list-item { /* ... (same as before) ... */ }
-        .source-list-item .ref-number { /* ... (same as before) ... */ }
-
-        .pdf-highlight-overlay { /* ... (same as before) ... */ }
-        .pdf-page-indicator { /* ... (same as before) ... */ }
+        .pdf-highlight-overlay {
+            position: absolute; background-color: rgba(255, 235, 59, 0.35); 
+            border: 1.5px solid #FBC02D; box-sizing: border-box;
+            pointer-events: none; z-index: 5; 
+            transition: all 0.2s ease-out; border-radius: 2px;
+        }
+        .pdf-page-indicator { 
+            position: absolute; top: 10px; right: 10px;
+            background-color: rgba(0,0,0,0.65); color: white;
+            padding: 4px 8px; font-size: 0.75rem;
+            border-radius: 4px; z-index: 6;
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        #right-pane:hover .pdf-page-indicator.visible-indicator {
+             opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans">
@@ -71,6 +113,7 @@
                     <h1 id="result-main-title" class="text-lg font-semibold text-slate-800 truncate mr-4" title="结果详情: 加载中...">结果详情: 加载中...</h1>
                 </div>
                 <div class="flex items-center space-x-2" id="header-actions-buttons">
+                    {/* Dynamic action buttons (Copy, Export, Review) will be prepended here by updateMainActions */}
                     <button id="toggle-original-doc-btn" title="切换原始文献显隐" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
                         <i class="fas fa-eye-slash mr-1.5"></i> <span id="toggle-doc-text">隐藏原文</span>
                     </button>
@@ -110,25 +153,20 @@
                 <div id="source-list-panel-wrapper" class="flex-shrink-0 border-t border-slate-200">
                     <button id="toggle-source-list-btn" class="w-full text-left p-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 focus:outline-none flex justify-between items-center">
                         <span>参考文献/来源列表</span>
-                        <i id="source-list-caret" class="fas fa-chevron-up transition-transform"></i> 
+                        <i id="source-list-caret" class="fas fa-chevron-up transition-transform"></i> {/* Default to up, meaning panel is collapsed */}
                     </button>
-                    <div id="source-list-panel" class="collapsible-panel p-3 bg-slate-50 overflow-y-auto custom-scrollbar collapsed">
+                    <div id="source-list-panel" class="p-3 bg-slate-50 overflow-y-auto custom-scrollbar collapsed">
                         <ul id="source-list-ul" class="text-xs space-y-1.5">
                             <li class="text-slate-400 italic">暂无来源信息或未加载。</li>
                         </ul>
                     </div>
                 </div>
 
-                <div id="version-history-wrapper" class="flex-shrink-0 border-t border-slate-200">
-                    <button id="toggle-version-history-btn" class="w-full text-left p-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 focus:outline-none flex justify-between items-center">
-                        <span>修改历史</span>
-                        <i id="version-history-caret" class="fas fa-chevron-up transition-transform"></i> 
-                    </button>
-                    <div id="version-history-panel" class="collapsible-panel p-3 bg-slate-50/50 overflow-y-auto custom-scrollbar collapsed">
-                        <ul id="version-history-list" class="space-y-1.5 text-xs">
-                            <li class="text-slate-500">加载中...</li>
-                        </ul>
-                    </div>
+                <div class="p-3 border-t border-slate-200 bg-slate-50/50 flex-shrink-0 max-h-48 overflow-y-auto custom-scrollbar">
+                    <h3 class="text-sm font-semibold text-slate-600 mb-2">修改历史</h3>
+                    <ul id="version-history-list" class="space-y-1.5 text-xs">
+                        <li class="text-slate-500">加载中...</li>
+                    </ul>
                 </div>
             </div>
 
@@ -146,7 +184,7 @@
     </div>
 
     <script>
-        // --- Mock Data --- (Same as previous complete version)
+        // --- Mock Data ---
         const mockResultDetailsStore = {
             "res001": { 
                 name: "白芍文献1的有效成分及药理作用分析结果", status: "approved", 
@@ -165,17 +203,12 @@
             "res002": { name: "白芍文献2的核心观点提炼", status: "pending", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf", currentVersion: "v1.1", versions: [{ version: "v1.1", date: "2025-02-19", editor: "赵六", notes: "更新引用", content: "核心观点：[[白芍有免疫调节价值|refs:srcA]]。需要[[进一步验证|refs:srcB]]。", sources: {"srcA": {type:"doc", page:1, displayText:"本文献第1页"}, "srcB": {type:"reason", text:"文献结论部分提及需要更多实验", displayText:"推理: 文献结论"}}, approved: false }] },
         };
         
-        // --- DOM Elements --- (Add new ones for version history panel)
+        // --- DOM Elements ---
         let currentResultId = null, currentResultData = null, displayedVersion = null, isEditMode = false, isOriginalDocVisible = true;
         const resultMainTitle = document.getElementById('result-main-title'), resultStatusBadge = document.getElementById('result-status-badge'), resultVersionInfo = document.getElementById('result-version-info'), resultTextDisplay = document.getElementById('result-text-display'), resultTextEdit = document.getElementById('result-text-edit'), editSpecificActions = document.getElementById('edit-specific-actions'), revisionNotesInput = document.getElementById('revision-notes'), headerActionsButtons = document.getElementById('header-actions-buttons'), versionHistoryList = document.getElementById('version-history-list'), originalDocIframe = document.getElementById('original-doc-iframe'), leftPane = document.getElementById('left-pane'), rightPane = document.getElementById('right-pane'), toggleOriginalDocBtn = document.getElementById('toggle-original-doc-btn'), toggleDocText = document.getElementById('toggle-doc-text'), toggleDocIcon = toggleOriginalDocBtn.querySelector('i'), pdfHighlightOverlay = document.getElementById('pdf-highlight-overlay'), pdfPageIndicator = document.getElementById('pdf-page-indicator'), sourceListUL = document.getElementById('source-list-ul'), toggleSourceListBtn = document.getElementById('toggle-source-list-btn'), sourceListCaret = document.getElementById('source-list-caret'), sourceListPanel = document.getElementById('source-list-panel');
-        
-        const toggleVersionHistoryBtn = document.getElementById('toggle-version-history-btn');
-        const versionHistoryPanel = document.getElementById('version-history-panel');
-        const versionHistoryCaret = document.getElementById('version-history-caret');
 
-        // --- Functions --- (Most are same, updates to interaction handlers and new toggle)
         function getStatusBadgeHTML(status) { /* ... (same) ... */ 
-            let badgeClass = '';
+             let badgeClass = '';
             let statusText = status;
             switch (status) {
                 case 'pending': badgeClass = 'status-pending'; statusText = '待审核'; break;
@@ -186,11 +219,12 @@
             return `<span class="status-badge-lg ${badgeClass}">${statusText}</span>`;
         }
         function escapeHtml(unsafe) { /* ... (same) ... */ 
-             if (typeof unsafe !== 'string') return '';
-            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+            if (typeof unsafe !== 'string') return '';
+            return unsafe.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'");
         }
-        function parseSourcedContentWithRefs(rawContent, sources = {}) { /* ... (same) ... */ 
-            const regex = /\[\[(.*?)\|refs:([a-zA-Z0-9_,-]+)\]\]/g;
+
+        function parseSourcedContentWithRefs(rawContent, sources = {}) {
+            const regex = /\[\[(.*?)\|refs:([a-zA-Z0-9_,-]+)\]\]/g; // Allow underscore in ref IDs
             let resultHTML = "";
             let lastIndex = 0;
             const sourceIdToNumberMap = {};
@@ -230,7 +264,8 @@
             resultHTML += escapeHtml(rawContent.substring(lastIndex));
             return { html: resultHTML, numberedSources: sourceIdToNumberMap };
         }
-        function displayVersionContent(versionObj) { /* ... (same) ... */ 
+
+        function displayVersionContent(versionObj) {
             displayedVersion = versionObj;
             const sourcesForVersion = versionObj.sources || {}; 
             const { html: parsedHtml, numberedSources } = parseSourcedContentWithRefs(versionObj.content || "", sourcesForVersion);
@@ -246,8 +281,9 @@
             renderSourceList(sourcesForVersion, numberedSources);
             attachSourceRefListeners(sourcesForVersion);
         }
+        
         function renderSourceList(sources, numberedSourcesMap) { /* ... (same) ... */ 
-            sourceListUL.innerHTML = '';
+             sourceListUL.innerHTML = '';
             if (Object.keys(sources).length === 0 || Object.keys(numberedSourcesMap).length === 0) {
                 sourceListUL.innerHTML = `<li class="text-slate-400 italic">当前结果版本无引用来源。</li>`;
                 return;
@@ -267,7 +303,7 @@
             });
         }
         
-        function attachSourceRefListeners(sources) { /* ... (same) ... */ 
+        function attachSourceRefListeners(sources) { /* ... (same, using wrapper functions) ... */
             document.querySelectorAll('.source-ref').forEach(el => {
                 const refId = el.dataset.refId; 
                 const source = sources[refId]; 
@@ -291,12 +327,9 @@
                     el.addEventListener('blur', sourceRefMouseleaveHandler);
                 }
             });
-        }
-        function sourceRefClickHandlerWrapper(event) { 
-            handleSourceInteraction(event.currentTarget.sourceDataForHandler);
-            hideRefTooltip(); // Hide tooltip on click
-        }
-        function sourceRefKeydownHandlerWrapper(event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSourceInteraction(event.currentTarget.sourceDataForHandler); hideRefTooltip(); } }
+         }
+        function sourceRefClickHandlerWrapper(event) { handleSourceInteraction(event.currentTarget.sourceDataForHandler); }
+        function sourceRefKeydownHandlerWrapper(event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSourceInteraction(event.currentTarget.sourceDataForHandler); } }
         function sourceRefMouseenterHandlerWrapper(event) { showRefTooltip(event.currentTarget, event.currentTarget.sourceDataForHandler, event.currentTarget.refNumberForHandler); }
         
         let currentTooltip = null;
@@ -322,16 +355,17 @@
             currentTooltip.style.opacity = '1';
         }
         function hideRefTooltip() { /* ... (same) ... */ 
-            if (currentTooltip) {
+             if (currentTooltip) {
                 currentTooltip.style.opacity = '0';
                 currentTooltip.style.visibility = 'hidden';
-                setTimeout(() => { if (currentTooltip && currentTooltip.style.opacity === '0') currentTooltip.remove(); currentTooltip = null; }, 200); // Delay removal for fade out
+                setTimeout(() => { if (currentTooltip && currentTooltip.style.opacity === '0') currentTooltip.remove(); currentTooltip = null; }, 200);
             }
         }
         function sourceRefMouseleaveHandler() { hideRefTooltip(); }
 
-        function handleSourceInteraction(source) { /* ... (same, but added hideRefTooltip call inside wrappers) ... */ 
-             if (!source) return;
+
+        function handleSourceInteraction(source) { /* ... (same) ... */ 
+            if (!source) return;
             pdfHighlightOverlay.classList.add('hidden');
             pdfPageIndicator.classList.remove('visible-indicator');
 
@@ -384,33 +418,109 @@
                 versionHistoryList.appendChild(li);
             });
         }
-        function updateMainActions() { /* ... (same) ... */ }
-        function toggleEditMode(enable) { /* ... (same) ... */ }
-        function toggleOriginalDocPane() { /* ... (same) ... */ }
-        
-        function toggleCollapsiblePanel(panelElement, caretElement) {
-            panelElement.classList.toggle('collapsed');
-            caretElement.classList.toggle('fa-chevron-down');
-            caretElement.classList.toggle('fa-chevron-up');
-            if (!panelElement.classList.contains('collapsed')) {
-                panelElement.style.maxHeight = panelElement.scrollHeight + "px";
+        function updateMainActions() { /* ... (same) ... */ 
+            const dynamicActionsContainer = document.getElementById('dynamic-actions-placeholder') || document.createElement('div');
+            dynamicActionsContainer.id = 'dynamic-actions-placeholder';
+            dynamicActionsContainer.className = 'flex items-center space-x-2';
+            dynamicActionsContainer.innerHTML = ''; 
+
+            const copyBtnHtml = `<button id="copy-result-btn" title="复制当前结果纯文本(含溯源标记)" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-copy mr-1.5"></i>复制</button>`;
+            const exportBtnHtml = `<button id="export-result-btn" title="导出当前结果" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center"><i class="fas fa-file-export mr-1.5"></i>导出</button>`;
+            dynamicActionsContainer.innerHTML += copyBtnHtml + exportBtnHtml;
+
+            if (currentResultData && currentResultData.status !== 'approved' && !isEditMode) {
+                 const reviewBtnHtml = `<button id="review-edit-btn" class="px-3 py-1.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-md flex items-center"><i class="fas fa-edit mr-1.5"></i>审核/编辑</button>`;
+                 dynamicActionsContainer.innerHTML += reviewBtnHtml;
+            }
+            
+            const existingPlaceholder = headerActionsButtons.querySelector('#dynamic-actions-placeholder');
+            if (existingPlaceholder) {
+                headerActionsButtons.replaceChild(dynamicActionsContainer, existingPlaceholder);
             } else {
-                panelElement.style.maxHeight = '0px';
+                headerActionsButtons.insertBefore(dynamicActionsContainer, toggleOriginalDocBtn);
+            }
+
+            if(document.getElementById('copy-result-btn')) {
+                document.getElementById('copy-result-btn').onclick = () => { 
+                    const rawTextWithMarkup = displayedVersion ? displayedVersion.content : resultTextEdit.value;
+                    navigator.clipboard.writeText(rawTextWithMarkup)
+                    .then(() => alert('结果内容 (含溯源标记) 已复制!'))
+                    .catch(err => console.error('复制失败:', err));
+                };
+            }
+            if(document.getElementById('export-result-btn')) {
+                document.getElementById('export-result-btn').onclick = () => alert('导出功能 (占位)');
+            }
+            if(document.getElementById('review-edit-btn')) {
+                 document.getElementById('review-edit-btn').onclick = () => toggleEditMode(true);
             }
         }
+        function toggleEditMode(enable) { /* ... (same) ... */ 
+             isEditMode = enable;
+            if (enable) {
+                if (!displayedVersion || !currentResultData || !currentResultData.versions || displayedVersion.version !== currentResultData.versions[0].version) {
+                    alert("只能编辑最新版本的结果。");
+                    isEditMode = false; 
+                    return;
+                }
+                resultTextDisplay.classList.add('hidden');
+                resultTextEdit.classList.remove('hidden');
+                resultTextEdit.value = displayedVersion.content; 
+                resultTextEdit.focus();
+                editSpecificActions.classList.remove('hidden');
+            } else {
+                resultTextDisplay.classList.remove('hidden');
+                resultTextEdit.classList.add('hidden');
+                editSpecificActions.classList.add('hidden');
+                if(displayedVersion) displayVersionContent(displayedVersion); 
+            }
+            updateMainActions(); 
+        }
+        function toggleOriginalDocPane() { /* ... (same) ... */ 
+             isOriginalDocVisible = !isOriginalDocVisible;
+            if (isOriginalDocVisible) {
+                rightPane.classList.remove('hidden', 'md:w-0', 'opacity-0');
+                rightPane.classList.add('md:w-1/2');
+                leftPane.classList.remove('md:w-full');
+                leftPane.classList.add('md:w-1/2');
+                toggleDocText.textContent = '隐藏原文';
+                toggleDocIcon.classList.remove('fa-eye');
+                toggleDocIcon.classList.add('fa-eye-slash');
 
+            } else {
+                rightPane.classList.add('hidden', 'md:w-0', 'opacity-0');
+                rightPane.classList.remove('md:w-1/2');
+                leftPane.classList.add('md:w-full');
+                leftPane.classList.remove('md:w-1/2');
+                toggleDocText.textContent = '显示原文';
+                toggleDocIcon.classList.remove('fa-eye-slash');
+                toggleDocIcon.classList.add('fa-eye');
+                pdfHighlightOverlay.classList.add('hidden'); 
+                pdfPageIndicator.classList.remove('visible-indicator');
+            }
+        }
+        
         if (toggleSourceListBtn) {
-            toggleSourceListBtn.addEventListener('click', () => toggleCollapsiblePanel(sourceListPanel, sourceListCaret));
-        }
-        if (toggleVersionHistoryBtn) {
-            toggleVersionHistoryBtn.addEventListener('click', () => toggleCollapsiblePanel(versionHistoryPanel, versionHistoryCaret));
+            toggleSourceListBtn.addEventListener('click', () => {
+                sourceListPanel.classList.toggle('collapsed');
+                sourceListCaret.classList.toggle('fa-chevron-down');
+                sourceListCaret.classList.toggle('fa-chevron-up');
+                // No need to set max-height with JS if using `!important` in CSS for collapsed state
+            });
         }
 
-        function loadResultDetails(resultId) { /* ... (same, ensure initial panel states are set) ... */ 
-             currentResultId = resultId;
+        function loadResultDetails(resultId) { /* ... (same, ensure it handles new data structure) ... */ 
+            currentResultId = resultId;
             currentResultData = mockResultDetailsStore[resultId];
 
-            if (!currentResultData) { /* ... error handling ... */ return; }
+            if (!currentResultData) {
+                resultMainTitle.textContent = "结果详情: 未找到";
+                resultMainTitle.title = "结果详情: 未找到";
+                resultTextDisplay.innerHTML = "<p class='text-red-500'>无法加载结果详情。</p>";
+                sourceListUL.innerHTML = `<li class="text-slate-400 italic">无法加载来源信息。</li>`;
+                updateMainActions(); 
+                return;
+            }
 
             resultMainTitle.textContent = `结果详情: ${currentResultData.name}`;
             resultMainTitle.title = `结果详情: ${currentResultData.name}`;
@@ -420,29 +530,17 @@
             if (currentResultData.versions && currentResultData.versions.length > 0) {
                 displayVersionContent(currentResultData.versions[0]); 
                 renderVersionHistory();
-            } else { /* ... handle no versions ... */ }
+            } else {
+                resultTextDisplay.innerHTML = "<p class='text-slate-500'>此结果没有版本信息。</p>";
+                sourceListUL.innerHTML = `<li class="text-slate-400 italic">无版本信息，无法加载来源。</li>`;
+                versionHistoryList.innerHTML = `<li class="text-slate-500 italic">无历史版本。</li>`;
+            }
             updateMainActions();
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            // ... (same DOMContentLoaded logic for URL params, save, approve, cancel) ...
-            // Initialize panel states (e.g., start collapsed)
-            [sourceListPanel, versionHistoryPanel].forEach(panel => {
-                if (panel && panel.classList.contains('collapsed')) {
-                    panel.style.maxHeight = '0px';
-                } else if (panel) {
-                    // If meant to be open by default and has content, set maxHeight
-                    // For this design, they start collapsed (caret up)
-                    panel.style.maxHeight = '0px'; // Ensure it respects collapsed class if set
-                    panel.classList.add('collapsed'); // Default to collapsed
-                    const caret = panel.id === 'source-list-panel' ? sourceListCaret : versionHistoryCaret;
-                    if(caret){
-                        caret.classList.remove('fa-chevron-down');
-                        caret.classList.add('fa-chevron-up');
-                    }
-                }
-            });
-             const urlParams = new URLSearchParams(window.location.search);
+            // ... (DOMContentLoaded logic for URL params, save, approve, cancel - same as before) ...
+            const urlParams = new URLSearchParams(window.location.search);
             const resultIdFromUrl = urlParams.get('id');
             if (resultIdFromUrl) {
                 loadResultDetails(decodeURIComponent(resultIdFromUrl));
@@ -452,9 +550,79 @@
                 updateMainActions(); 
             }
             if(toggleOriginalDocBtn) toggleOriginalDocBtn.addEventListener('click', toggleOriginalDocPane);
+
             if(document.getElementById('cancel-edit-btn')) document.getElementById('cancel-edit-btn').onclick = () => toggleEditMode(false);
-            if(document.getElementById('save-changes-btn')) document.getElementById('save-changes-btn').onclick = () => { /* ... (save logic as before) ... */ };
-            if(document.getElementById('approve-result-btn')) document.getElementById('approve-result-btn').onclick = () => { /* ... (approve logic as before) ... */ };
+            
+            if(document.getElementById('save-changes-btn')) document.getElementById('save-changes-btn').onclick = () => { 
+                const newRawContentWithMarkup = resultTextEdit.value; 
+                const notes = revisionNotesInput.value || "内容更新 (含溯源)";
+                const currentDate = new Date().toISOString().split('T')[0];
+                const currentUser = "当前用户"; 
+
+                const latestVersionNum = (currentResultData && currentResultData.versions.length > 0) ? parseFloat(currentResultData.versions[0].version.substring(1)) : 0;
+                const newVersionNum = (latestVersionNum + 0.1).toFixed(1);
+
+                const newVersion = {
+                    version: `v${newVersionNum}`, date: currentDate, editor: currentUser, notes: notes,
+                    content: newRawContentWithMarkup, 
+                    sources: (displayedVersion && displayedVersion.sources) ? JSON.parse(JSON.stringify(displayedVersion.sources)) : {}, // Deep copy sources
+                    approved: false 
+                };
+                if (!currentResultData.versions) currentResultData.versions = [];
+                currentResultData.versions.unshift(newVersion); 
+                currentResultData.status = 'pending'; 
+                mockResultDetailsStore[currentResultId] = currentResultData;
+
+                displayVersionContent(newVersion);
+                renderVersionHistory();
+                resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
+                revisionNotesInput.value = '';
+                toggleEditMode(false);
+                alert('修改已保存 (含溯源信息)，状态更新为待审核!');
+            };
+
+            if(document.getElementById('approve-result-btn')) document.getElementById('approve-result-btn').onclick = () => { 
+                const latestVersionToApprove = currentResultData.versions[0];
+                if (!latestVersionToApprove) { alert("没有可批准的版本！"); return; }
+                
+                if (resultTextEdit.value !== latestVersionToApprove.content && isEditMode) {
+                    if (!confirm("内容已修改但未保存。是否先保存更改再审核通过？\n点击 '确定' 保存并审核。\n点击 '取消' 以当前版本内容直接审核。")) {
+                        latestVersionToApprove.content = resultTextEdit.value; 
+                        latestVersionToApprove.notes = revisionNotesInput.value || "审核时直接更新内容并通过";
+                    } else { 
+                         latestVersionToApprove.content = resultTextEdit.value;
+                         latestVersionToApprove.notes = revisionNotesInput.value || "保存并审核通过";
+                    }
+                }
+                latestVersionToApprove.approved = true;
+                latestVersionToApprove.rejected = false;
+                latestVersionToApprove.date = new Date().toISOString().split('T')[0];
+                latestVersionToApprove.editor = "审核人 (模拟)"; 
+                currentResultData.status = 'approved';
+                mockResultDetailsStore[currentResultId] = currentResultData;
+
+                displayVersionContent(latestVersionToApprove);
+                renderVersionHistory();
+                resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
+                revisionNotesInput.value = '';
+                toggleEditMode(false); 
+                alert('结果已审核通过!');
+            };
+            
+            // Initialize source list panel state
+            if (sourceListPanel) { // Check if element exists
+                if (!sourceListPanel.classList.contains('collapsed')) {
+                    // If not explicitly collapsed and has scrollHeight, set maxHeight for animation
+                    if (sourceListPanel.scrollHeight > 0) sourceListPanel.style.maxHeight = sourceListPanel.scrollHeight + "px";
+                    else sourceListPanel.style.maxHeight = "200px"; // Default open height if no content yet
+                    sourceListCaret.classList.remove('fa-chevron-up');
+                    sourceListCaret.classList.add('fa-chevron-down');
+                } else {
+                    sourceListPanel.style.maxHeight = '0px';
+                    sourceListCaret.classList.remove('fa-chevron-down');
+                    sourceListCaret.classList.add('fa-chevron-up');
+                }
+            }
         });
     </script>
 </body>
