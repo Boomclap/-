@@ -627,21 +627,59 @@
             });
         }
 
-        if (collapsedFolderBtn && sidebarFlyout && mainTreeNav) {
-            collapsedFolderBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (sidebar.classList.contains('w-16')) { // Only if sidebar is collapsed
-                    const flyoutTreeContent = document.getElementById('flyout-tree-content');
-                    if (sidebarFlyout.classList.contains('hidden')) {
-                        flyoutTreeContent.innerHTML = ''; 
-                        const clonedTree = mainTreeNav.cloneNode(true); 
-                        flyoutTreeContent.appendChild(clonedTree);
-                        addListenersToTreeItems(clonedTree, true); // CRITICAL: Attach listeners to the cloned tree
-                        sidebarFlyout.classList.remove('hidden');
-                    } else {
-                        sidebarFlyout.classList.add('hidden');
-                    }
+        let flyoutHoverTimeout; // Timer for hiding the flyout
+        const FLYOUT_HIDE_DELAY = 200; // Milliseconds before hiding flyout on mouseleave
+
+        if (collapsedFolderBtn && sidebarFlyout && mainTreeNav && flyoutTreeContent) {
+            
+            const showFlyout = () => {
+                if (sidebar.classList.contains('w-16') && sidebarFlyout.classList.contains('hidden')) {
+                    flyoutTreeContent.innerHTML = ''; 
+                    const clonedTree = mainTreeNav.cloneNode(true); 
+                    flyoutTreeContent.appendChild(clonedTree);
+                    addListenersToTreeItems(clonedTree, true); // Attach listeners to the cloned tree items
+                    sidebarFlyout.classList.remove('hidden');
                 }
+            };
+
+            const startHideFlyoutTimer = () => {
+                clearTimeout(flyoutHoverTimeout); // Clear any existing timer
+                flyoutHoverTimeout = setTimeout(() => {
+                    sidebarFlyout.classList.add('hidden');
+                }, FLYOUT_HIDE_DELAY);
+            };
+
+            const cancelHideFlyoutTimer = () => {
+                clearTimeout(flyoutHoverTimeout);
+            };
+
+            // Show flyout when mouse enters the folder icon
+            collapsedFolderBtn.addEventListener('mouseenter', (e) => {
+                e.stopPropagation();
+                if (sidebar.classList.contains('w-16')) {
+                    cancelHideFlyoutTimer(); // Cancel hide if mouse re-enters quickly
+                    showFlyout();
+                }
+            });
+
+            // Start timer to hide flyout when mouse leaves the folder icon
+            collapsedFolderBtn.addEventListener('mouseleave', (e) => {
+                e.stopPropagation();
+                if (sidebar.classList.contains('w-16')) {
+                    startHideFlyoutTimer();
+                }
+            });
+
+            // Keep flyout open if mouse enters the flyout itself
+            sidebarFlyout.addEventListener('mouseenter', (e) => {
+                e.stopPropagation();
+                cancelHideFlyoutTimer();
+            });
+
+            // Start timer to hide flyout when mouse leaves the flyout itself
+            sidebarFlyout.addEventListener('mouseleave', (e) => {
+                e.stopPropagation();
+                startHideFlyoutTimer();
             });
         }
         // --- END OF Sidebar Flyout Logic ---
