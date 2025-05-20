@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量文献调研</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+        .hideable-section { 
+            overflow: hidden; 
+            transition: max-height 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+                        opacity 0.3s ease-in-out, 
+                        padding-top 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+                        padding-bottom 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+                        margin-bottom 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); 
+        }
+        .progress-bar-container {
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
+        .task-status-badge {
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+            min-width: 70px;
+        }
+        .status-pending { background-color: #fef3c7; color: #b45309; }
+        .status-processing { background-color: #dbeafe; color: #1d4ed8; }
+        .status-completed { background-color: #d1fae5; color: #047857; }
+        .status-error { background-color: #fee2e2; color: #b91c1c; }
+        .status-cancelled { background-color: #e5e7eb; color: #4b5563; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans">
+    <div class="flex flex-col h-screen">
+        <!-- 顶部标题栏 -->
+        <header class="bg-white shadow-sm p-3 border-b border-slate-200 flex-shrink-0">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="min-w-0 flex-grow">
+                    <h1 class="text-lg font-semibold text-slate-800 truncate">批量文献调研</h1>
+                    <div class="text-xs text-slate-500 mt-0.5">
+                        已选择文献：<span id="selected-docs-count">0</span> 篇
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 flex-shrink-0 ml-4">
+                    <button id="toggle-controls-btn" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-sliders-h mr-1.5"></i> <span>隐藏控件</span>
+                    </button>
+                    <button id="toggle-original-btn" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-eye-slash mr-1.5"></i> <span>隐藏原文</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-3 gap-3">
+            <!-- 左侧面板：文献列表和解析进度 -->
+            <div id="left-pane" class="w-full md:w-1/2 flex flex-col bg-white rounded-lg shadow overflow-hidden">
+                <!-- 控制区域（可隐藏） -->
+                <div id="controls-section" class="flex-shrink-0 hideable-section">
+                    <div class="p-3 border-b border-slate-200 bg-slate-50">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label for="model-select" class="block text-xs font-medium text-slate-600 mb-0.5">选择模型</label>
+                                <select id="model-select" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white">
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="claude-3-opus">Claude 3 Opus</option>
+                                    <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="prompt-select" class="block text-xs font-medium text-slate-600 mb-0.5">选择提示词</label>
+                                <select id="prompt-select" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 bg-white">
+                                    <option value="">--选择预设提示词--</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="custom-prompt" class="block text-xs font-medium text-slate-600 mb-0.5">当前提示词（可编辑）</label>
+                            <textarea id="custom-prompt" rows="3" class="w-full text-sm p-1.5 border border-slate-300 rounded-md focus:ring-1 focus:ring-blue-500 custom-scrollbar" placeholder="输入或修改提示词..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button id="start-analysis-btn" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center">
+                                <i class="fas fa-play mr-1.5"></i> 开始解析
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文献列表和进度 -->
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <div id="literature-list" class="divide-y divide-slate-200">
+                        <!-- 文献项目将通过JavaScript动态添加 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板：原文显示 -->
+            <div id="right-pane" class="w-full md:w-1/2 bg-white rounded-lg shadow overflow-hidden flex flex-col">
+                <div class="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h2 class="text-base font-semibold text-slate-700">原文内容</h2>
+                    <div id="doc-navigation" class="text-xs text-slate-500">
+                        <!-- 文档导航将通过JavaScript动态添加 -->
+                    </div>
+                </div>
+                <div class="flex-1 p-1 bg-slate-200 overflow-hidden">
+                    <iframe id="doc-viewer" src="about:blank" class="w-full h-full border-none bg-white rounded-md" title="文献预览"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 模拟数据
+        const mockLiteratureData = [
+            { 
+                id: "lit001", 
+                title: "IBD最新研究进展.pdf",
+                status: "processing",
+                progress: 45,
+                originalUrl: "https://example.com/sample.pdf",
+                analysisResults: null
+            },
+            { 
+                id: "lit002", 
+                title: "白芍化学成分分析.docx",
+                status: "completed",
+                progress: 100,
+                originalUrl: "https://example.com/sample2.pdf",
+                analysisResults: "这是分析结果..."
+            }
+        ];
+
+        const mockPrompts = [
+            { id: "prompt1", name: "提取关键信息", text: "请从以下文献中提取关键信息，包括研究目的、方法、主要发现和结论。" },
+            { id: "prompt2", name: "生成摘要", text: "请根据以下文献内容，生成一段不超过300字且易于理解的摘要。" },
+            { id: "prompt3", name: "识别主要论点", text: "请识别并列出文献中的主要论点及其支撑论据。" }
+        ];
+
+        // DOM 元素
+        const literatureList = document.getElementById('literature-list');
+        const promptSelect = document.getElementById('prompt-select');
+        const customPrompt = document.getElementById('custom-prompt');
+        const startAnalysisBtn = document.getElementById('start-analysis-btn');
+        const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        const toggleOriginalBtn = document.getElementById('toggle-original-btn');
+        const controlsSection = document.getElementById('controls-section');
+        const rightPane = document.getElementById('right-pane');
+        const leftPane = document.getElementById('left-pane');
+        const selectedDocsCount = document.getElementById('selected-docs-count');
+        const docViewer = document.getElementById('doc-viewer');
+
+        // 状态变量
+        let isControlsVisible = true;
+        let isOriginalVisible = true;
+        let currentDocId = null;
+
+        // 初始化提示词选择
+        function initializePrompts() {
+            mockPrompts.forEach(prompt => {
+                promptSelect.innerHTML += `<option value="${prompt.id}">${prompt.name}</option>`;
+            });
+        }
+
+        // 渲染文献列表
+        function renderLiteratureList() {
+            literatureList.innerHTML = '';
+            mockLiteratureData.forEach(lit => {
+                const statusBadge = getStatusBadge(lit.status);
+                const progressBar = getProgressBar(lit.progress, lit.status);
+                
+                const literatureItem = document.createElement('div');
+                literatureItem.className = 'p-3 hover:bg-slate-50';
+                literatureItem.innerHTML = `
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-medium text-slate-900 truncate cursor-pointer hover:text-blue-600" 
+                                onclick="viewDocument('${lit.id}')" title="${lit.title}">${lit.title}</h3>
+                        </div>
+                        <div class="ml-2 flex-shrink-0">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                    ${progressBar}
+                    <div class="mt-2 flex justify-end space-x-2">
+                        ${lit.status === 'processing' ? `
+                            <button onclick="cancelAnalysis('${lit.id}')" class="text-xs text-red-600 hover:text-red-800">
+                                <i class="fas fa-times-circle mr-1"></i>取消
+                            </button>
+                        ` : ''}
+                        ${lit.status === 'completed' ? `
+                            <button onclick="viewResults('${lit.id}')" class="text-xs text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-eye mr-1"></i>查看结果
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                literatureList.appendChild(literatureItem);
+            });
+            updateSelectedCount();
+        }
+
+        // 获取状态标签HTML
+        function getStatusBadge(status) {
+            const statusMap = {
+                'pending': { text: '待处理', class: 'status-pending' },
+                'processing': { text: '处理中', class: 'status-processing' },
+                'completed': { text: '已完成', class: 'status-completed' },
+                'error': { text: '错误', class: 'status-error' },
+                'cancelled': { text: '已取消', class: 'status-cancelled' }
+            };
+            const statusInfo = statusMap[status] || { text: status, class: '' };
+            return `<span class="task-status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+        }
+
+        // 获取进度条HTML
+        function getProgressBar(progress, status) {
+            let barColor = 'bg-blue-500';
+            if (status === 'completed') barColor = 'bg-green-500';
+            else if (status === 'error') barColor = 'bg-red-500';
+            else if (status === 'cancelled') barColor = 'bg-slate-400';
+
+            const pulseClass = status === 'processing' ? 'animate-pulse' : '';
+            
+            return `
+                <div class="flex items-center">
+                    <div class="flex-1 progress-bar-container mr-2">
+                        <div class="progress-bar ${barColor} ${pulseClass}" style="width: ${progress}%"></div>
+                    </div>
+                    <span class="text-xs text-slate-500 w-8 text-right">${progress}%</span>
+                </div>
+            `;
+        }
+
+        // 更新选中文献数量
+        function updateSelectedCount() {
+            selectedDocsCount.textContent = mockLiteratureData.length;
+        }
+
+        // 查看文档
+        function viewDocument(docId) {
+            currentDocId = docId;
+            const doc = mockLiteratureData.find(d => d.id === docId);
+            if (doc) {
+                docViewer.src = doc.originalUrl;
+            }
+        }
+
+        // 取消解析
+        function cancelAnalysis(docId) {
+            if (confirm('确定要取消该文献的解析任务吗？')) {
+                const doc = mockLiteratureData.find(d => d.id === docId);
+                if (doc) {
+                    doc.status = 'cancelled';
+                    doc.progress = 0;
+                    renderLiteratureList();
+                }
+            }
+        }
+
+        // 查看结果
+        function viewResults(docId) {
+            const doc = mockLiteratureData.find(d => d.id === docId);
+            if (doc && doc.analysisResults) {
+                alert(doc.analysisResults); // 这里应该打开一个新的标签页显示结果
+            }
+        }
+
+        // 切换控制区域显示
+        toggleControlsBtn.addEventListener('click', () => {
+            isControlsVisible = !isControlsVisible;
+            if (isControlsVisible) {
+                controlsSection.style.maxHeight = controlsSection.scrollHeight + 'px';
+                controlsSection.style.opacity = '1';
+                toggleControlsBtn.querySelector('span').textContent = '隐藏控件';
+            } else {
+                controlsSection.style.maxHeight = '0';
+                controlsSection.style.opacity = '0';
+                toggleControlsBtn.querySelector('span').textContent = '显示控件';
+            }
+        });
+
+        // 切换原文显示
+        toggleOriginalBtn.addEventListener('click', () => {
+            isOriginalVisible = !isOriginalVisible;
+            if (isOriginalVisible) {
+                rightPane.classList.remove('hidden', 'md:w-0');
+                rightPane.classList.add('md:w-1/2');
+                leftPane.classList.remove('md:w-full');
+                leftPane.classList.add('md:w-1/2');
+                toggleOriginalBtn.querySelector('span').textContent = '隐藏原文';
+            } else {
+                rightPane.classList.add('hidden', 'md:w-0');
+                rightPane.classList.remove('md:w-1/2');
+                leftPane.classList.add('md:w-full');
+                leftPane.classList.remove('md:w-1/2');
+                toggleOriginalBtn.querySelector('span').textContent = '显示原文';
+            }
+        });
+
+        // 提示词选择变化
+        promptSelect.addEventListener('change', () => {
+            const selectedPrompt = mockPrompts.find(p => p.id === promptSelect.value);
+            if (selectedPrompt) {
+                customPrompt.value = selectedPrompt.text;
+            }
+        });
+
+        // 开始解析按钮点击
+        startAnalysisBtn.addEventListener('click', () => {
+            const pendingDocs = mockLiteratureData.filter(d => d.status === 'pending');
+            if (pendingDocs.length === 0) {
+                alert('没有待处理的文献。');
+                return;
+            }
+            if (!customPrompt.value.trim()) {
+                alert('请输入或选择提示词。');
+                return;
+            }
+            // 模拟开始解析
+            pendingDocs.forEach(doc => {
+                doc.status = 'processing';
+                doc.progress = 0;
+            });
+            renderLiteratureList();
+            // 模拟进度更新
+            simulateProgress();
+        });
+
+        // 模拟进度更新
+        function simulateProgress() {
+            const processingDocs = mockLiteratureData.filter(d => d.status === 'processing');
+            if (processingDocs.length === 0) return;
+
+            processingDocs.forEach(doc => {
+                if (doc.progress < 100) {
+                    doc.progress += Math.floor(Math.random() * 10);
+                    if (doc.progress >= 100) {
+                        doc.progress = 100;
+                        doc.status = 'completed';
+                        doc.analysisResults = '这是模拟的分析结果...';
+                    }
+                }
+            });
+            renderLiteratureList();
+
+            if (processingDocs.some(d => d.status === 'processing')) {
+                setTimeout(simulateProgress, 1000);
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initializePrompts();
+            renderLiteratureList();
+            // 设置控制区域初始高度
+            controlsSection.style.maxHeight = controlsSection.scrollHeight + 'px';
+        });
+    </script>
+</body>
+</html> 
+</body>
+</html> 

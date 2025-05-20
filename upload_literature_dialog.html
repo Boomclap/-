@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传文献</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- 添加 Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- 添加 jQuery (Select2 的依赖) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 添加 Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .dialog-content {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Select2 自定义样式 */
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
+            border-color: #e5e7eb;
+            border-radius: 0.375rem;
+            min-height: 42px;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: none;
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #0369a1;
+            margin-right: 0.5rem;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 上传文献对话框 -->
+    <div class="dialog-overlay">
+        <div class="dialog-content">
+            <!-- 对话框标题 -->
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800">添加文献</h2>
+                <button class="text-slate-400 hover:text-slate-500" onclick="closeDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- 对话框内容 -->
+            <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                <!-- 文件上传区域 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">文献上传</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <i class="fas fa-cloud-upload-alt text-slate-400 text-3xl mb-3"></i>
+                            <div class="flex text-sm text-slate-600">
+                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>选择文件</span>
+                                    <input id="file-upload" name="file-upload" type="file" class="sr-only" accept=".pdf,.doc,.docx">
+                                </label>
+                                <p class="pl-1">或拖拽文件到这里</p>
+                            </div>
+                            <p class="text-xs text-slate-500">支持 PDF</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 所属文件夹选择 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">所属文件夹</label>
+                    <select id="folder-select" class="w-full">
+                        <option value="">请选择文件夹</option>
+                    </select>
+                </div>
+
+                <!-- 文献标签选择 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">文献标签</label>
+                    <select id="tag-select" class="w-full" multiple="multiple">
+                    </select>
+                </div>
+            </div>
+
+            <!-- 对话框底部按钮 -->
+            <div class="flex justify-end space-x-2 p-4 border-t border-slate-200">
+                <button onclick="closeDialog()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                    取消
+                </button>
+                <button onclick="submitUpload()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加标签对话框 -->
+    <div id="add-tag-dialog" class="dialog-overlay hidden">
+        <div class="dialog-content" style="max-width: 400px;">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800">添加新标签</h3>
+                <button class="text-slate-400 hover:text-slate-500" onclick="closeAddTagDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <label for="new-tag-name" class="block text-sm font-medium text-slate-700 mb-1">标签名</label>
+                    <input type="text" id="new-tag-name" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入标签名">
+                </div>
+                <div class="mb-4">
+                    <label for="new-tag-desc" class="block text-sm font-medium text-slate-700 mb-1">默认提示词</label>
+                    <textarea id="new-tag-desc" rows="3" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入标签描述..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 p-4 border-t border-slate-200">
+                <button onclick="closeAddTagDialog()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                    取消
+                </button>
+                <button onclick="submitNewTag()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        let mockFolders = [
+            { id: 'folder1', name: '白芍' },
+            { id: 'folder2', name: '当归' },
+            { id: 'folder3', name: 'IBD' },
+            { id: 'folder4', name: '免疫' }
+        ];
+
+        let mockTags = [
+            { id: 'tag1', name: '指纹图谱', desc: '包含指纹图谱相关内容' },
+            { id: 'tag2', name: '含量测定', desc: '包含含量测定相关内容' },
+            { id: 'tag3', name: '临床研究', desc: '临床研究相关文献' },
+            { id: 'tag4', name: '综述', desc: '综述类文献' }
+        ];
+
+        // DOM 元素
+        const fileUpload = document.getElementById('file-upload');
+        const dropZone = document.querySelector('.border-dashed');
+        const addTagDialog = document.getElementById('add-tag-dialog');
+
+        // 初始化 Select2
+        $(document).ready(function() {
+            // 初始化文件夹选择
+            $('#folder-select').select2({
+                placeholder: '请选择文件夹',
+                allowClear: true,
+                data: mockFolders.map(folder => ({
+                    id: folder.id,
+                    text: folder.name
+                })),
+                language: {
+                    noResults: function() {
+                        return "没有找到匹配的文件夹";
+                    }
+                }
+            });
+
+            // 初始化标签选择
+            $('#tag-select').select2({
+                placeholder: '请选择标签',
+                allowClear: true,
+                multiple: true,
+                data: mockTags.map(tag => ({
+                    id: tag.id,
+                    text: tag.name,
+                    desc: tag.desc
+                })),
+                language: {
+                    noResults: function() {
+                        return "没有找到匹配的标签";
+                    }
+                },
+                templateResult: formatTag,
+                templateSelection: formatTagSelection
+            });
+        });
+
+        // 格式化标签显示（下拉列表中）
+        function formatTag(tag) {
+            if (!tag.id) return tag.text;
+            return $(`
+                <div>
+                    <div class="font-medium">${tag.text}</div>
+                    ${tag.desc ? `<div class="text-xs text-slate-500">${tag.desc}</div>` : ''}
+                </div>
+            `);
+        }
+
+        // 格式化已选标签显示
+        function formatTagSelection(tag) {
+            return tag.text;
+        }
+
+        // 提交上传
+        function submitUpload() {
+            const file = fileUpload.files[0];
+            const folderId = $('#folder-select').val();
+            const selectedTagIds = $('#tag-select').val();
+
+            if (!file) {
+                alert('请选择要上传的文件！');
+                return;
+            }
+
+            if (!folderId) {
+                alert('请选择所属文件夹！');
+                return;
+            }
+
+            if (!selectedTagIds || selectedTagIds.length === 0) {
+                alert('请至少选择一个标签！');
+                return;
+            }
+
+            // 在实际应用中，这里应该调用上传 API
+            console.log('上传文件:', {
+                file: file.name,
+                folderId,
+                folderName: $('#folder-select').find('option:selected').text(),
+                selectedTagIds
+            });
+            alert('文件上传成功！');
+        }
+
+        // 关闭上传对话框
+        function closeDialog() {
+            // 在实际应用中，这里应该关闭对话框
+            alert('关闭对话框');
+        }
+
+        // 显示添加标签对话框
+        function showAddTagDialog() {
+            addTagDialog.classList.remove('hidden');
+        }
+
+        // 关闭添加标签对话框
+        function closeAddTagDialog() {
+            addTagDialog.classList.add('hidden');
+            document.getElementById('new-tag-name').value = '';
+            document.getElementById('new-tag-desc').value = '';
+        }
+
+        // 提交新标签
+        function submitNewTag() {
+            const tagName = document.getElementById('new-tag-name').value.trim();
+            const tagDesc = document.getElementById('new-tag-desc').value.trim();
+            
+            if (!tagName) {
+                alert('请输入标签名！');
+                return;
+            }
+
+            // 检查标签名是否已存在
+            if (mockTags.some(tag => tag.name === tagName)) {
+                alert('该标签名已存在！');
+                return;
+            }
+
+            // 创建新标签
+            const newTag = {
+                id: 'tag' + (mockTags.length + 1),
+                name: tagName,
+                desc: tagDesc
+            };
+            mockTags.push(newTag);
+
+            // 自动选中新创建的标签
+            $('#tag-select').append(new Option(tagName, newTag.id));
+            closeAddTagDialog();
+        }
+
+        // 文件拖放上传
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileUpload.files = files;
+            }
+        });
+    </script>
+</body>
+</html> 

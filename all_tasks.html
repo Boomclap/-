@@ -183,45 +183,41 @@
         }
 
         function openTaskRelatedPage(taskType, taskName, relatedId) {
-            if (!window.parent || typeof window.parent.openTab !== 'function') {
-                console.error("无法访问父窗口的 openTab 函数。");
-                alert("无法打开页面，请在主应用框架内操作。");
-                return;
-            }
-
             let pageUrl = '';
             let tabTitle = '';
-            let uniqueIdSuffix = relatedId || Date.now().toString(); // Ensure some uniqueness if relatedId is missing
+            let uniqueIdSuffix = relatedId || Date.now().toString();
 
             switch (taskType) {
                 case 'single_doc_analysis':
                     pageUrl = `literature_research.html?id=${encodeURIComponent(relatedId)}`;
-                    // Extract filename for a more specific title
-                    const match = taskName.match(/'([^']+)'/); // Extracts text within single quotes
+                    const match = taskName.match(/\'([^\']+)\'/);
                     const docName = match ? match[1] : '文献';
                     tabTitle = `单篇解析: ${docName.substring(0, 20)}${docName.length > 20 ? '...' : ''}`;
                     break;
                 case 'batch_research_analysis':
-                    pageUrl = `comprehensive_research.html?batchId=${encodeURIComponent(relatedId)}`; // Assuming page handles batchId
-                    tabTitle = `批量调研: ${taskName.substring(0, 20)}${taskName.length > 20 ? '...' : ''}`;
+                    pageUrl = `batch_research.html?source=task_${encodeURIComponent(relatedId)}&task_id=${encodeURIComponent(relatedId)}`;
+                    tabTitle = `批量调研任务: ${taskName.substring(0, 20)}${taskName.length > 20 ? '...' : ''}`;
                     break;
                 case 'comprehensive_research_analysis':
-                    pageUrl = `comprehensive_research.html?id=${encodeURIComponent(relatedId)}`; // Assuming page handles specific research id
+                    pageUrl = `comprehensive_research.html?id=${encodeURIComponent(relatedId)}`;
                     tabTitle = `综合调研: ${taskName.substring(0, 20)}${taskName.length > 20 ? '...' : ''}`;
                     break;
                 case 'doc_upload_analysis':
                 case 'batch_doc_upload_analysis':
-                    // Not clickable as per requirement, so this case ideally shouldn't be called
-                    // If it is, we do nothing or show a message
                     console.warn(`Task type "${taskType}" is not designed to be clickable.`);
-                    return; 
+                    return;
                 default:
                     console.warn(`Unknown task type for navigation: ${taskType}`);
                     return;
             }
 
             if (pageUrl && tabTitle) {
-                window.parent.openTab(tabTitle, pageUrl, true, uniqueIdSuffix);
+                if (window.parent && typeof window.parent.openTab === 'function') {
+                    window.parent.openTab(tabTitle, pageUrl, true, uniqueIdSuffix);
+                } else {
+                    console.warn("openTab function not found on parent window. Opening in new browser tab as a fallback.");
+                    window.open(pageUrl, '_blank'); // Fallback to new browser tab
+                }
             }
         }
         
@@ -245,22 +241,32 @@
             }
 
             paginatedData.forEach(item => {
-                let taskNameHtml = `<span class="font-medium text-slate-800 truncate" title="${item.name}">${item.name}</span>`;
-                const isClickable = ['single_doc_analysis', 'batch_research_analysis', 'comprehensive_research_analysis'].includes(item.type);
-                
-                if (isClickable && item.relatedId) {
-                    // Escape parameters for security in HTML attributes
-                    const escapedType = item.type.replace(/"/g, "&quot;");
-const escapedName = item.name.replace(/"/g, "&quot;");
-const escapedRelatedId = item.relatedId.replace(/"/g, "&quot;");
-
-taskNameHtml = `<span class="font-medium text-slate-800 truncate clickable-task-name" 
-                       title="点击查看: ${item.name}" 
-                       onclick="openTaskRelatedPage('${escapedType}', '${escapedName}', '${escapedRelatedId}')">
-                    ${item.name}
-                  </span>`;
+                let taskNameHtml;
+                if (item.type === 'batch_research_analysis') {
+                    taskNameHtml = `<span class="font-medium text-slate-800 truncate" title="${item.name}">${item.name}</span>`;
+                } else {
+                    const isClickable = ['single_doc_analysis', 'comprehensive_research_analysis'].includes(item.type);
+                    if (isClickable && item.relatedId) {
+                        const escapedType = item.type.replace(/"/g, "&quot;");
+                        const escapedName = item.name.replace(/"/g, "&quot;");
+                        const escapedRelatedId = item.relatedId.replace(/"/g, "&quot;");
+                        taskNameHtml = `<span class="font-medium text-slate-800 truncate clickable-task-name" 
+                            title="点击查看: ${item.name}" 
+                            onclick="openTaskRelatedPage('${escapedType}', '${escapedName}', '${escapedRelatedId}')">${item.name}</span>`;
+                    } else {
+                        taskNameHtml = `<span class="font-medium text-slate-800 truncate" title="${item.name}">${item.name}</span>`;
+                    }
                 }
 
+                let viewButtonHtml = '';
+                if (item.type === 'batch_research_analysis' && item.relatedId) {
+                    const escapedType = item.type.replace(/"/g, "&quot;");
+                    const escapedName = item.name.replace(/"/g, "&quot;");
+                    const escapedRelatedId = item.relatedId.replace(/"/g, "&quot;");
+                    viewButtonHtml = `<button title="打开批量调研: ${item.name}" class="text-blue-500 hover:text-blue-700 p-1" onclick="openTaskRelatedPage('${escapedType}', '${escapedName}', '${escapedRelatedId}')"><i class="fas fa-eye"></i></button>`;
+                } else {
+                    viewButtonHtml = `<button title="查看任务 ${item.id} 详情 (模拟)" class="text-blue-500 hover:text-blue-700 p-1" onclick="alert('查看任务 ${item.id} 详情 (模拟)')"><i class="fas fa-eye"></i></button>`;
+                }
 
                 const row = `
                     <tr class="bg-white border-b hover:bg-slate-50">
@@ -274,7 +280,7 @@ taskNameHtml = `<span class="font-medium text-slate-800 truncate clickable-task-
                         <td class="p-3 text-center">
                             ${item.status === 'error' ? `<button title="重试任务 ${item.id}" class="text-orange-500 hover:text-orange-700 p-1" onclick="alert('重试任务 ${item.id} (模拟)')"><i class="fas fa-redo-alt"></i></button>` : ''}
                             ${(item.status === 'processing' || item.status === 'pending') ? `<button title="取消任务 ${item.id}" class="text-red-500 hover:text-red-700 p-1" onclick="if(confirm('确定取消任务 ${item.id}?')) alert('取消任务 ${item.id} (模拟)')"><i class="fas fa-times-circle"></i></button>` : ''}
-                            <button title="查看任务 ${item.id} 详情 (模拟)" class="text-blue-500 hover:text-blue-700 p-1" onclick="alert('查看任务 ${item.id} 详情 (模拟)')"><i class="fas fa-eye"></i></button>
+                            ${viewButtonHtml}
                         </td>
                     </tr>
                 `;
