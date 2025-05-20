@@ -1,0 +1,11 @@
+{
+    "editor": {
+        "visible": false,
+        "theme": "light"
+    },
+    "ui": {
+        "headerBgColor": "#f8f9fa",
+        "sidebarWidth": "280px",
+        "fontSize": "14px"
+    }
+} 

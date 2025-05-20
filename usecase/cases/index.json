@@ -1,0 +1,15 @@
+[
+    {
+        "title": "批量解析压缩包上传文献",
+        "file": "use_case_batch_upload.md"
+    },{
+        "title": "增删文献",
+        "file": "manage_literature.md"
+    },{
+        "title": "查看单个文献调研历史",
+        "file": "view_literature_research_history.md"
+    },{
+        "title": "提示词管理",
+        "file": "prompt_management.md"
+    }
+] 

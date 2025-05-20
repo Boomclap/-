@@ -1,7 +1,9 @@
 import http.server
 import socketserver
 import webbrowser
+import json
 from pathlib import Path
+import os
 
 # 设置服务器端口
 PORT = 8000
@@ -19,6 +21,31 @@ class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 处理 OPTIONS 请求
         self.send_response(200)
         self.end_headers()
+
+    def do_POST(self):
+        # 处理保存文件的 POST 请求
+        if self.path == '/save':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data.decode('utf-8'))
+
+            file_path = os.path.join('usecase', 'cases', data['file'])
+            
+            # 确保目标目录存在
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(data['content'])
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"status": "success"}')
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(str(e).encode('utf-8'))
+        else:
+            super().do_POST()
 
 print(f"启动本地服务器在端口 {PORT}...")
 print("请使用浏览器访问: http://localhost:8000")

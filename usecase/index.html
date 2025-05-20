@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用例查看</title>
+    <!-- 引入 Markdown 编辑器和预览器 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <!-- 引入 Markdown 渲染器 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 引入字体图标 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <style>
+        :root {
+            --header-height: 60px;
+            --sidebar-width: 280px;
+            --primary-color: #2196F3;
+            --header-bg: #f8f9fa;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --hover-bg: #f5f5f5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--header-height);
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: #fff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            height: var(--header-height);
+            box-sizing: border-box;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .nav-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background-color: #1976D2;
+        }
+
+        .button i {
+            font-size: 14px;
+        }
+
+        .toggle-editor-btn {
+            background-color: #4CAF50;
+        }
+
+        .toggle-editor-btn:hover {
+            background-color: #388E3C;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin: 4px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-item i {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        #editor-container {
+            flex: 1;
+            display: none;
+            min-height: 0;
+        }
+
+        #preview {
+            flex: 1;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .EasyMDEContainer {
+            flex: 1;
+        }
+
+        .CodeMirror {
+            height: 100% !important;
+            border-radius: 8px;
+        }
+
+        /* 预览区域的样式优化 */
+        #preview {
+            font-size: var(--font-size, 14px);
+            line-height: 1.6;
+        }
+
+        #preview h1 {
+            font-size: 2em;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.3em;
+            margin-top: 0;
+        }
+
+        #preview h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3em;
+        }
+
+        #preview h3 {
+            font-size: 1.25em;
+        }
+
+        #preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+            background-color: white;
+        }
+
+        #preview th, #preview td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+        }
+
+        #preview th {
+            background-color: var(--header-bg);
+            font-weight: 600;
+        }
+
+        #preview tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        #preview code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #preview pre code {
+            display: block;
+            padding: 16px;
+            overflow-x: auto;
+            line-height: 1.45;
+            background-color: #f6f8fa;
+            border-radius: 6px;
+        }
+
+        #preview blockquote {
+            margin: 1em 0;
+            padding: 0.5em 1em;
+            border-left: 4px solid var(--primary-color);
+            background-color: #f8f9fa;
+            color: #666;
+        }
+
+        #preview ul, #preview ol {
+            padding-left: 2em;
+        }
+
+        #preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">用例导航</h1>
+            </div>
+            <div class="nav-container" id="navigation">
+                <!-- 导航项将通过JavaScript动态添加 -->
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <div class="toolbar">
+                    <!-- <button class="button toggle-editor-btn" onclick="toggleEditor()">
+                        <i class="fas fa-edit"></i>
+                        <span id="toggleBtnText">显示编辑器</span>
+                    </button> -->
+                    <button class="button" onclick="saveContent()" id="saveButton" style="display: none;">
+                        <i class="fas fa-save"></i>
+                        保存
+                    </button>
+                </div>
+            </div>
+            <div class="content-container">
+                <div id="editor-container">
+                    <textarea id="editor"></textarea>
+                </div>
+                <div id="preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let editor;
+        let currentFile = '';
+        let config = {
+            editor: {
+                visible: false,
+                theme: 'light'
+            },
+            ui: {
+                headerBgColor: '#f8f9fa',
+                sidebarWidth: '280px',
+                fontSize: '14px'
+            }
+        };
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('config.json');
+                if (response.ok) {
+                    config = await response.json();
+                    applyConfig();
+                }
+            } catch (error) {
+                console.warn('未找到配置文件，使用默认配置');
+            }
+        }
+
+        // 应用配置
+        function applyConfig() {
+            // 设置编辑器可见性
+            const editorContainer = document.getElementById('editor-container');
+            const preview = document.getElementById('preview');
+            const saveButton = document.getElementById('saveButton');
+            
+            editorContainer.style.display = config.editor.visible ? 'block' : 'none';
+            preview.style.flex = config.editor.visible ? '1' : '2';
+            saveButton.style.display = config.editor.visible ? 'flex' : 'none';
+
+            // 应用UI配置
+            document.documentElement.style.setProperty('--header-bg', config.ui.headerBgColor);
+            document.documentElement.style.setProperty('--sidebar-width', config.ui.sidebarWidth);
+            document.documentElement.style.setProperty('--font-size', config.ui.fontSize);
+        }
+
+        // 初始化编辑器
+        window.onload = async function() {
+            await loadConfig();
+            
+            editor = new EasyMDE({
+                element: document.getElementById('editor'),
+                autofocus: true,
+                spellChecker: false,
+                status: false,
+                toolbar: ["bold", "italic", "heading", "|", 
+                         "quote", "unordered-list", "ordered-list", "|",
+                         "link", "image", "table", "|",
+                         "preview", "side-by-side", "fullscreen", "|",
+                         "guide"],
+                previewRender: function(plainText) {
+                    return marked.parse(plainText);
+                }
+            });
+
+            // 监听编辑器变化，实时更新预览
+            editor.codemirror.on("change", () => {
+                document.getElementById('preview').innerHTML = marked.parse(editor.value());
+            });
+
+            loadNavigation();
+        };
+
+        // 切换编辑器显示状态
+        function toggleEditor() {
+            config.editor.visible = !config.editor.visible;
+            applyConfig();
+        }
+
+        // 加载导航
+        async function loadNavigation() {
+            try {
+                const response = await fetch('cases/index.json');
+                const cases = await response.json();
+                const nav = document.getElementById('navigation');
+                nav.innerHTML = cases.map(c => 
+                    `<div class="nav-item" onclick="loadCase('${c.file}')">
+                        <i class="fas fa-file-alt"></i>
+                        ${c.title}
+                    </div>`
+                ).join('');
+            } catch (error) {
+                console.error('加载导航失败:', error);
+            }
+        }
+
+        // 加载用例内容
+        async function loadCase(filename) {
+            try {
+                currentFile = filename;
+                const response = await fetch(`cases/${filename}`);
+                const content = await response.text();
+                editor.value(content);
+                document.getElementById('preview').innerHTML = marked.parse(content);
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                document.querySelector(`[onclick="loadCase('${filename}')"]`).classList.add('active');
+            } catch (error) {
+                console.error('加载用例失败:', error);
+            }
+        }
+
+        // 保存内容
+        async function saveContent() {
+            if (!currentFile || !editor) return;
+            try {
+                const content = editor.value();
+                const response = await fetch(`/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file: currentFile,
+                        content: content
+                    })
+                });
+                if (response.ok) {
+                    showNotification('保存成功！');
+                } else {
+                    throw new Error('保存失败');
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                showNotification('保存失败，请检查控制台获取详细信息', 'error');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'success') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.padding = '12px 24px';
+            notification.style.borderRadius = '4px';
+            notification.style.backgroundColor = type === 'success' ? '#4CAF50' : '#f44336';
+            notification.style.color = 'white';
+            notification.style.zIndex = '1000';
+            notification.style.transition = 'opacity 0.3s';
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // 3秒后淡出
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html> 
