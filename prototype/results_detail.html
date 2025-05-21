@@ -71,6 +71,15 @@
                     <h1 id="result-main-title" class="text-lg font-semibold text-slate-800 truncate mr-4" title="结果详情: 加载中...">结果详情: 加载中...</h1>
                 </div>
                 <div class="flex items-center space-x-2" id="header-actions-buttons">
+                    <button id="copy-result-btn" title="复制结果内容" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-copy mr-1.5"></i> 复制
+                    </button>
+                    <button id="export-result-btn" title="导出结果" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-file-export mr-1.5"></i> 导出
+                    </button>
+                    <button id="review-result-btn" title="审核结果" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
+                        <i class="fas fa-check-double mr-1.5"></i> 审核
+                    </button>
                     <button id="toggle-original-doc-btn" title="切换原始文献显隐" class="px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center">
                         <i class="fas fa-eye-slash mr-1.5"></i> <span id="toggle-doc-text">隐藏原文</span>
                     </button>
@@ -146,315 +155,457 @@
     </div>
 
     <script>
-        // --- Mock Data --- (Same as previous complete version)
+        // --- Mock Data ---
         const mockResultDetailsStore = {
             "res001": { 
-                name: "白芍文献1的有效成分及药理作用分析结果", status: "approved", 
-                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf", currentVersion: "v1.3",
+                name: "白芍文献1的有效成分及药理作用分析结果", 
+                status: "approved", 
+                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf", 
+                currentVersion: "v1.3",
                 versions: [
-                     { version: "v1.3", date: "2025-02-20", editor: "张三", notes: "更新为编号引用格式", 
-                       content: "文献明确指出[[白芍总苷具有显著的抗炎、镇痛双重药理作用|refs:s1]]。其主要活性成分包括[[芍药苷|refs:s1]]和羟基芍药苷等。这些发现与[[一项重要的外部研究|refs:s2]]的结果相符。因此，综合来看，[[白芍作为传统中药，其药用价值得到了现代药理学的支持|refs:s3]]。这句话同时参考了[[文献和外部链接|refs:s1,s2]]。",
-                       sources: {
+                    { 
+                        version: "v1.3", 
+                        date: "2025-02-20", 
+                        editor: "张三", 
+                        notes: "更新为编号引用格式", 
+                        content: "文献明确指出[[白芍总苷具有显著的抗炎、镇痛双重药理作用|refs:s1]]。其主要活性成分包括[[芍药苷|refs:s1]]和羟基芍药苷等。这些发现与[[一项重要的外部研究|refs:s2]]的结果相符。因此，综合来看，[[白芍作为传统中药，其药用价值得到了现代药理学的支持|refs:s3]]。这句话同时参考了[[文献和外部链接|refs:s1,s2]]。",
+                        sources: {
                             "s1": { type: "doc", page: 2, rect: "50,100,300,40", sel: "段落开头'白芍总苷...'", displayText: "本文献，第 2 页，高亮区域", docSnippet: "白芍总苷具有显著的抗炎、镇痛双重药理作用，对多种炎症模型均显示出良好的抑制效果..." },
                             "s2": { type: "url", link: "https://pubmed.ncbi.nlm.nih.gov/12345678/", displayText: "外部研究: PubMed ID 12345678" },
-                       }, approved: true },
-                    { version: "v1.2", date: "2025-02-18", editor: "张三", notes: "添加了旧版溯源信息", content: "文献指出 [[白芍总苷具有抗炎、镇痛作用|source:doc,page:2,rect:50,100,200,30]]。", sources:{}, approved: true }, // Old version might not have new sources structure
-                    { version: "v1.1", date: "2025-02-16", editor: "张三", notes: "最终审核通过版 (无溯源)", content: "详细分析结果内容 v1.1...\n- 白芍总苷具有抗炎、镇痛作用。", sources:{}, approved: true },
+                        }, 
+                        approved: true,
+                        reviewComment: "内容准确，引用规范",
+                        reviewDate: "2025-02-21",
+                        reviewer: "李四"
+                    }
                 ]
             },
-            "res002": { name: "白芍文献2的核心观点提炼", status: "pending", originalDocUrl: "https://www.clickdimensions.com/links/TestPDFfile.pdf", currentVersion: "v1.1", versions: [{ version: "v1.1", date: "2025-02-19", editor: "赵六", notes: "更新引用", content: "核心观点：[[白芍有免疫调节价值|refs:srcA]]。需要[[进一步验证|refs:srcB]]。", sources: {"srcA": {type:"doc", page:1, displayText:"本文献第1页"}, "srcB": {type:"reason", text:"文献结论部分提及需要更多实验", displayText:"推理: 文献结论"}}, approved: false }] },
+            "res003": {
+                name: "综述：IBD治疗中草药应用前景分析",
+                status: "rejected",
+                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf",
+                currentVersion: "v1.0",
+                versions: [
+                    {
+                        version: "v1.0",
+                        date: "2025-01-20",
+                        editor: "孙八",
+                        notes: "初版提交",
+                        content: "研究表明[[多种中草药在IBD治疗中显示出较好的效果|refs:s1]]。特别是[[黄芩素对肠道炎症的抑制作用显著|refs:s2]]。然而，[[临床应用仍存在剂量标准化等问题|refs:s3]]。",
+                        sources: {
+                            "s1": { type: "doc", page: 1, rect: "100,150,300,30", displayText: "文献第1页", docSnippet: "多项研究表明，草药如黄芩、白术等在IBD的治疗中显示出较好的临床效果..." },
+                            "s2": { type: "url", link: "https://example.com/research/ibd", displayText: "外部研究：黄芩素功效分析" },
+                            "s3": { type: "doc", page: 3, displayText: "文献第3页结论部分" }
+                        },
+                        approved: false,
+                        reviewComment: "内容有误，参考文献不足，需要补充更多临床研究证据",
+                        reviewDate: "2025-01-25",
+                        reviewer: "钱七"
+                    }
+                ]
+            }
         };
         
-        // --- DOM Elements --- (Add new ones for version history panel)
-        let currentResultId = null, currentResultData = null, displayedVersion = null, isEditMode = false, isOriginalDocVisible = true;
-        const resultMainTitle = document.getElementById('result-main-title'), resultStatusBadge = document.getElementById('result-status-badge'), resultVersionInfo = document.getElementById('result-version-info'), resultTextDisplay = document.getElementById('result-text-display'), resultTextEdit = document.getElementById('result-text-edit'), editSpecificActions = document.getElementById('edit-specific-actions'), revisionNotesInput = document.getElementById('revision-notes'), headerActionsButtons = document.getElementById('header-actions-buttons'), versionHistoryList = document.getElementById('version-history-list'), originalDocIframe = document.getElementById('original-doc-iframe'), leftPane = document.getElementById('left-pane'), rightPane = document.getElementById('right-pane'), toggleOriginalDocBtn = document.getElementById('toggle-original-doc-btn'), toggleDocText = document.getElementById('toggle-doc-text'), toggleDocIcon = toggleOriginalDocBtn.querySelector('i'), pdfHighlightOverlay = document.getElementById('pdf-highlight-overlay'), pdfPageIndicator = document.getElementById('pdf-page-indicator'), sourceListUL = document.getElementById('source-list-ul'), toggleSourceListBtn = document.getElementById('toggle-source-list-btn'), sourceListCaret = document.getElementById('source-list-caret'), sourceListPanel = document.getElementById('source-list-panel');
-        
-        const toggleVersionHistoryBtn = document.getElementById('toggle-version-history-btn');
-        const versionHistoryPanel = document.getElementById('version-history-panel');
-        const versionHistoryCaret = document.getElementById('version-history-caret');
+        // --- DOM Elements ---
+        let currentResultId = null;
+        let currentResultData = null;
+        let displayedVersion = null;
+        let isEditMode = false;
+        let isOriginalDocVisible = true;
 
-        // --- Functions --- (Most are same, updates to interaction handlers and new toggle)
-        function getStatusBadgeHTML(status) { /* ... (same) ... */ 
-            let badgeClass = '';
-            let statusText = status;
-            switch (status) {
-                case 'pending': badgeClass = 'status-pending'; statusText = '待审核'; break;
-                case 'approved': badgeClass = 'status-approved'; statusText = '审核通过'; break;
-                case 'rejected': badgeClass = 'status-rejected'; statusText = '审核不通过'; break;
-                default: badgeClass = 'bg-slate-200 text-slate-700'; break;
+        // DOM元素引用
+        const elements = {
+            resultMainTitle: document.getElementById('result-main-title'),
+            resultStatusBadge: document.getElementById('result-status-badge'),
+            resultVersionInfo: document.getElementById('result-version-info'),
+            resultTextDisplay: document.getElementById('result-text-display'),
+            resultTextEdit: document.getElementById('result-text-edit'),
+            editSpecificActions: document.getElementById('edit-specific-actions'),
+            revisionNotesInput: document.getElementById('revision-notes'),
+            headerActionsButtons: document.getElementById('header-actions-buttons'),
+            versionHistoryList: document.getElementById('version-history-list'),
+            originalDocIframe: document.getElementById('original-doc-iframe'),
+            leftPane: document.getElementById('left-pane'),
+            rightPane: document.getElementById('right-pane'),
+            toggleOriginalDocBtn: document.getElementById('toggle-original-doc-btn'),
+            toggleDocText: document.getElementById('toggle-doc-text'),
+            sourceListUL: document.getElementById('source-list-ul'),
+            copyResultBtn: document.getElementById('copy-result-btn'),
+            exportResultBtn: document.getElementById('export-result-btn'),
+            reviewResultBtn: document.getElementById('review-result-btn'),
+            saveChangesBtn: document.getElementById('save-changes-btn'),
+            approveResultBtn: document.getElementById('approve-result-btn'),
+            cancelEditBtn: document.getElementById('cancel-edit-btn')
+        };
+
+        // --- 功能函数 ---
+        
+        // 复制功能
+        function copyResultContent() {
+            const content = displayedVersion.content;
+            navigator.clipboard.writeText(content).then(() => {
+                showToast('结果内容已复制到剪贴板');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showToast('复制失败，请重试', 'error');
+            });
+        }
+
+        // 导出功能
+        function exportResult() {
+            const exportData = {
+                name: currentResultData.name,
+                version: displayedVersion.version,
+                content: displayedVersion.content,
+                sources: displayedVersion.sources,
+                exportDate: new Date().toISOString(),
+                status: currentResultData.status
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `result_${currentResultId}_${displayedVersion.version}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('结果已导出');
+        }
+
+        // 进入编辑模式
+        function enterEditMode() {
+            isEditMode = true;
+            elements.resultTextDisplay.classList.add('hidden');
+            elements.resultTextEdit.classList.remove('hidden');
+            elements.editSpecificActions.classList.remove('hidden');
+            elements.resultTextEdit.value = displayedVersion.content;
+            elements.reviewResultBtn.disabled = true;
+            showToast('已进入编辑模式');
+        }
+
+        // 退出编辑模式
+        function exitEditMode() {
+            isEditMode = false;
+            elements.resultTextDisplay.classList.remove('hidden');
+            elements.resultTextEdit.classList.add('hidden');
+            elements.editSpecificActions.classList.add('hidden');
+            elements.reviewResultBtn.disabled = false;
+            displayVersionContent(displayedVersion);
+        }
+
+        // 保存修改
+        function saveChanges() {
+            const newContent = elements.resultTextEdit.value;
+            const revisionNotes = elements.revisionNotesInput.value;
+            
+            // 创建新版本
+            const newVersion = {
+                version: `v${parseFloat(displayedVersion.version.substring(1)) + 0.1}`,
+                date: new Date().toISOString().split('T')[0],
+                editor: "当前用户", // 实际应用中应该从用户会话获取
+                notes: revisionNotes,
+                content: newContent,
+                sources: displayedVersion.sources, // 保持原有的sources
+                approved: false
+            };
+
+            // 更新数据
+            currentResultData.versions.unshift(newVersion);
+            currentResultData.currentVersion = newVersion.version;
+            displayedVersion = newVersion;
+
+            // 更新UI
+            exitEditMode();
+            updateVersionHistoryList();
+            showToast('修改已保存');
+        }
+
+        // 审核功能
+        function reviewResult(isApproved) {
+            const reviewDialog = document.createElement('div');
+            reviewDialog.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4">审核确认</h3>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">审核说明</label>
+                            <textarea id="review-comment" class="w-full border rounded-md p-2" rows="3"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md" onclick="this.closest('.fixed').remove()">取消</button>
+                            <button class="px-4 py-2 text-sm text-white ${isApproved ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} rounded-md" onclick="submitReview(${isApproved}, this)">确认</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(reviewDialog);
+        }
+
+        // 提交审核结果
+        function submitReview(isApproved, buttonElement) {
+            const dialog = buttonElement.closest('.fixed');
+            const comment = dialog.querySelector('#review-comment').value;
+            
+            displayedVersion.approved = isApproved;
+            displayedVersion.reviewComment = comment;
+            displayedVersion.reviewDate = new Date().toISOString().split('T')[0];
+            displayedVersion.reviewer = "当前用户"; // 实际应用中应该从用户会话获取
+            
+            currentResultData.status = isApproved ? 'approved' : 'rejected';
+            
+            // 更新UI
+            updateUI();
+            dialog.remove();
+            showToast(`审核${isApproved ? '通过' : '不通过'}已提交`);
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white ${
+                type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } transition-opacity duration-300`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 更新版本历史列表
+        function updateVersionHistoryList() {
+            const versions = currentResultData.versions;
+            elements.versionHistoryList.innerHTML = versions.map((ver, index) => `
+                <li class="version-item ${ver.version === displayedVersion.version ? 'active' : ''} p-2 border-l-4 hover:bg-blue-50 cursor-pointer"
+                    onclick="switchToVersion('${ver.version}')">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-medium">${ver.version}</span>
+                            <span class="text-slate-500 ml-2">${ver.date}</span>
+                        </div>
+                        ${ver.approved !== undefined ? `
+                            <span class="text-xs ${ver.approved ? 'text-green-600' : 'text-red-600'}">
+                                ${ver.approved ? '已通过' : '未通过'}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div class="text-slate-600 mt-1">${ver.notes || '无说明'}</div>
+                    ${ver.reviewComment ? `
+                        <div class="text-slate-500 mt-1 text-xs">
+                            审核意见: ${ver.reviewComment}
+                        </div>
+                    ` : ''}
+                </li>
+            `).join('');
+        }
+
+        // 切换版本
+        function switchToVersion(versionId) {
+            const version = currentResultData.versions.find(v => v.version === versionId);
+            if (version) {
+                displayedVersion = version;
+                displayVersionContent(version);
+                updateVersionHistoryList();
             }
-            return `<span class="status-badge-lg ${badgeClass}">${statusText}</span>`;
         }
-        function escapeHtml(unsafe) { /* ... (same) ... */ 
-             if (typeof unsafe !== 'string') return '';
-            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+        // 更新UI
+        function updateUI() {
+            elements.resultMainTitle.textContent = `结果详情: ${currentResultData.name}`;
+            elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
+            elements.originalDocIframe.src = currentResultData.originalDocUrl;
+            updateVersionHistoryList();
         }
-        function parseSourcedContentWithRefs(rawContent, sources = {}) { /* ... (same) ... */ 
+
+        // 状态徽章生成函数
+        function getStatusBadgeHTML(status) {
+            const statusMap = {
+                'pending': { class: 'status-pending', text: '待审核' },
+                'approved': { class: 'status-approved', text: '审核通过' },
+                'rejected': { class: 'status-rejected', text: '审核不通过' }
+            };
+            const statusInfo = statusMap[status] || { class: 'bg-slate-200 text-slate-700', text: status };
+            return `<span class="status-badge-lg ${statusInfo.class}">${statusInfo.text}</span>`;
+        }
+
+        // HTML转义函数
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 解析带引用的内容
+        function parseSourcedContentWithRefs(rawContent, sources = {}) {
             const regex = /\[\[(.*?)\|refs:([a-zA-Z0-9_,-]+)\]\]/g;
             let resultHTML = "";
             let lastIndex = 0;
             const sourceIdToNumberMap = {};
             let currentRefNumber = 1;
 
+            // 首先映射所有引用编号
             for (const match of rawContent.matchAll(regex)) {
-                const refIdsString = match[2].trim();
-                refIdsString.split(',').forEach(refId => {
-                    const cleanedRefId = refId.trim(); 
+                const refIds = match[2].trim().split(',');
+                refIds.forEach(refId => {
+                    const cleanedRefId = refId.trim();
                     if (sources[cleanedRefId] && !sourceIdToNumberMap[cleanedRefId]) {
                         sourceIdToNumberMap[cleanedRefId] = currentRefNumber++;
                     }
                 });
             }
 
+            // 然后处理文本和引用
             for (const match of rawContent.matchAll(regex)) {
                 const textBefore = rawContent.substring(lastIndex, match.index);
                 const inferredText = match[1].trim();
-                const refIdsString = match[2].trim();
+                const refIds = match[2].trim().split(',');
                 
-                resultHTML += escapeHtml(textBefore); 
-                resultHTML += `<span class="inferred-highlight">${escapeHtml(inferredText)}</span>`;
+                resultHTML += escapeHtml(textBefore);
+                resultHTML += `<span class="inferred-text">${escapeHtml(inferredText)}</span>`;
 
-                const refIdArray = refIdsString.split(',').map(id => id.trim());
-
-                refIdArray.forEach((refId, idx) => {
-                    const source = sources[refId];
-                    if (!source) return;
-                    const refNum = sourceIdToNumberMap[refId];
-                    if (!refNum) return;
-                    
-                    resultHTML += `<sup class="source-ref" role="button" tabindex="0" aria-label="查看来源 ${refNum}" data-ref-id="${escapeHtml(refId)}">${refNum}</sup>`;
-                    if (idx < refIdArray.length - 1) resultHTML += ','; 
+                refIds.forEach((refId, idx) => {
+                    const cleanedRefId = refId.trim();
+                    const refNum = sourceIdToNumberMap[cleanedRefId];
+                    if (refNum) {
+                        resultHTML += `<sup class="source-ref" data-ref-id="${escapeHtml(cleanedRefId)}">${refNum}</sup>`;
+                        if (idx < refIds.length - 1) resultHTML += ',';
+                    }
                 });
+                
                 lastIndex = match.index + match[0].length;
             }
+            
             resultHTML += escapeHtml(rawContent.substring(lastIndex));
             return { html: resultHTML, numberedSources: sourceIdToNumberMap };
         }
-        function displayVersionContent(versionObj) { /* ... (same) ... */ 
-            displayedVersion = versionObj;
-            const sourcesForVersion = versionObj.sources || {}; 
-            const { html: parsedHtml, numberedSources } = parseSourcedContentWithRefs(versionObj.content || "", sourcesForVersion);
+
+        // 显示版本内容
+        function displayVersionContent(versionObj) {
+            if (!versionObj) return;
             
-            resultTextDisplay.innerHTML = parsedHtml;
-            resultVersionInfo.textContent = `版本: ${versionObj.version} | 更新: ${versionObj.date} by ${versionObj.editor}`;
-            if (versionObj.notes) resultVersionInfo.textContent += ` | 说明: ${versionObj.notes}`;
+            const { html, numberedSources } = parseSourcedContentWithRefs(versionObj.content || "", versionObj.sources || {});
             
-            if (isEditMode && currentResultData && currentResultData.versions && displayedVersion.version !== currentResultData.versions[0].version) {
-                toggleEditMode(false); 
+            elements.resultTextDisplay.innerHTML = html;
+            elements.resultVersionInfo.textContent = `版本: ${versionObj.version} | 更新: ${versionObj.date} by ${versionObj.editor}`;
+            
+            if (versionObj.notes) {
+                elements.resultVersionInfo.textContent += ` | 说明: ${versionObj.notes}`;
             }
-            resultTextEdit.value = versionObj.content || ""; 
-            renderSourceList(sourcesForVersion, numberedSources);
-            attachSourceRefListeners(sourcesForVersion);
+            
+            if (versionObj.reviewComment) {
+                elements.resultVersionInfo.textContent += ` | 审核意见: ${versionObj.reviewComment}`;
+            }
+
+            // 更新源列表
+            updateSourceList(versionObj.sources || {}, numberedSources);
+            
+            // 添加源引用事件监听
+            attachSourceRefListeners();
         }
-        function renderSourceList(sources, numberedSourcesMap) { /* ... (same) ... */ 
-            sourceListUL.innerHTML = '';
-            if (Object.keys(sources).length === 0 || Object.keys(numberedSourcesMap).length === 0) {
-                sourceListUL.innerHTML = `<li class="text-slate-400 italic">当前结果版本无引用来源。</li>`;
+
+        // 更新源列表
+        function updateSourceList(sources, numberedSources) {
+            elements.sourceListUL.innerHTML = '';
+            
+            if (Object.keys(sources).length === 0) {
+                elements.sourceListUL.innerHTML = '<li class="text-slate-400 italic">暂无来源信息</li>';
                 return;
             }
-            const sortedSourceEntries = Object.entries(sources)
-                .filter(([id, _]) => numberedSourcesMap[id]) 
-                .sort(([idA, _A], [idB, _B]) => numberedSourcesMap[idA] - numberedSourcesMap[idB]);
 
-            sortedSourceEntries.forEach(([id, source]) => {
-                const refNum = numberedSourcesMap[id];
+            const sortedSources = Object.entries(sources)
+                .sort(([idA, _A], [idB, _B]) => (numberedSources[idA] || 0) - (numberedSources[idB] || 0));
+
+            sortedSources.forEach(([id, source]) => {
+                const refNum = numberedSources[id];
+                if (!refNum) return;
+
                 const li = document.createElement('li');
-                li.className = 'source-list-item';
-                li.setAttribute('data-ref-id', id);
-                li.innerHTML = `<span class="ref-number">[${refNum}]</span> ${escapeHtml(source.displayText || `${source.type} source`)}`;
-                li.addEventListener('click', () => handleSourceInteraction(source));
-                sourceListUL.appendChild(li);
+                li.className = 'source-list-item p-2 hover:bg-slate-100 rounded cursor-pointer';
+                li.innerHTML = `
+                    <div class="flex items-start">
+                        <span class="font-medium mr-2">[${refNum}]</span>
+                        <div class="flex-1">
+                            <div class="text-slate-700">${escapeHtml(source.displayText || '')}</div>
+                            ${source.docSnippet ? `
+                                <div class="text-slate-500 text-xs mt-1">${escapeHtml(source.docSnippet)}</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                li.addEventListener('click', () => handleSourceClick(source));
+                elements.sourceListUL.appendChild(li);
             });
         }
-        
-        function attachSourceRefListeners(sources) { /* ... (same) ... */ 
-            document.querySelectorAll('.source-ref').forEach(el => {
-                const refId = el.dataset.refId; 
-                const source = sources[refId]; 
 
-                el.removeEventListener('click', sourceRefClickHandlerWrapper);
-                el.removeEventListener('keydown', sourceRefKeydownHandlerWrapper);
-                el.removeEventListener('mouseenter', sourceRefMouseenterHandlerWrapper);
-                el.removeEventListener('mouseleave', sourceRefMouseleaveHandler);
-                el.removeEventListener('focus', sourceRefMouseenterHandlerWrapper); 
-                el.removeEventListener('blur', sourceRefMouseleaveHandler);  
-
-                if (source) {
-                    el.sourceDataForHandler = source; 
-                    el.refNumberForHandler = el.textContent; 
-
-                    el.addEventListener('click', sourceRefClickHandlerWrapper);
-                    el.addEventListener('keydown', sourceRefKeydownHandlerWrapper);
-                    el.addEventListener('mouseenter', sourceRefMouseenterHandlerWrapper);
-                    el.addEventListener('mouseleave', sourceRefMouseleaveHandler);
-                    el.addEventListener('focus', sourceRefMouseenterHandlerWrapper);
-                    el.addEventListener('blur', sourceRefMouseleaveHandler);
-                }
-            });
-        }
-        function sourceRefClickHandlerWrapper(event) { 
-            handleSourceInteraction(event.currentTarget.sourceDataForHandler);
-            hideRefTooltip(); // Hide tooltip on click
-        }
-        function sourceRefKeydownHandlerWrapper(event) { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSourceInteraction(event.currentTarget.sourceDataForHandler); hideRefTooltip(); } }
-        function sourceRefMouseenterHandlerWrapper(event) { showRefTooltip(event.currentTarget, event.currentTarget.sourceDataForHandler, event.currentTarget.refNumberForHandler); }
-        
-        let currentTooltip = null;
-        function showRefTooltip(element, source, refNum) { /* ... (same) ... */ 
-            if (!source) return; 
-            if (currentTooltip) currentTooltip.remove(); 
-
-            let tooltipText = `<strong>源 #${refNum}:</strong> ${escapeHtml(source.displayText) || source.type}<br>`;
-            if (source.type === 'doc' && source.docSnippet) {
-                tooltipText += `<span class="source-text-snippet">${escapeHtml(source.docSnippet)}</span>`;
-            } else if (source.type === 'url' && source.link) { 
-                tooltipText += `<a href='${escapeHtml(source.link)}' target='_blank' rel='noopener noreferrer'>${escapeHtml(source.link)}</a>`;
-            } else if (source.type === 'reason' && source.text) { 
-                tooltipText += `<em>${escapeHtml(source.text)}</em>`;
-            }
-
-            currentTooltip = document.createElement('div');
-            currentTooltip.className = 'ref-tooltip'; 
-            currentTooltip.innerHTML = tooltipText; 
-            
-            element.appendChild(currentTooltip); 
-            currentTooltip.style.visibility = 'visible'; 
-            currentTooltip.style.opacity = '1';
-        }
-        function hideRefTooltip() { /* ... (same) ... */ 
-            if (currentTooltip) {
-                currentTooltip.style.opacity = '0';
-                currentTooltip.style.visibility = 'hidden';
-                setTimeout(() => { if (currentTooltip && currentTooltip.style.opacity === '0') currentTooltip.remove(); currentTooltip = null; }, 200); // Delay removal for fade out
-            }
-        }
-        function sourceRefMouseleaveHandler() { hideRefTooltip(); }
-
-        function handleSourceInteraction(source) { /* ... (same, but added hideRefTooltip call inside wrappers) ... */ 
-             if (!source) return;
-            pdfHighlightOverlay.classList.add('hidden');
-            pdfPageIndicator.classList.remove('visible-indicator');
-
-            document.querySelectorAll('#source-list-ul .source-list-item.highlighted').forEach(li => li.classList.remove('highlighted'));
-            const sourceIdToHighlight = displayedVersion && displayedVersion.sources ? Object.keys(displayedVersion.sources).find(key => displayedVersion.sources[key] === source) : null;
-            if (sourceIdToHighlight) {
-                const listItem = sourceListUL.querySelector(`[data-ref-id="${sourceIdToHighlight}"]`);
-                if (listItem) {
-                     listItem.classList.add('highlighted');
-                     listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            }
+        // 处理源点击
+        function handleSourceClick(source) {
+            if (!source) return;
 
             if (source.type === 'doc') {
-                if (isOriginalDocVisible === false) toggleOriginalDocPane();
+                // 处理文档内源引用
                 if (source.page) {
-                    pdfPageIndicator.textContent = `Page ${source.page}`;
-                    pdfPageIndicator.classList.add('visible-indicator');
-                    console.log(`Simulating navigation to PDF page: ${source.page}`);
+                    // 在实际应用中，这里应该调用PDF查看器的API跳转到指定页面
+                    console.log(`跳转到第 ${source.page} 页`);
                 }
-                if (source.rect) { 
-                    const rect = source.rect.split(',').map(Number);
-                    pdfHighlightOverlay.style.left = `${rect[0]}px`; 
-                    pdfHighlightOverlay.style.top = `${rect[1]}px`;  
-                    pdfHighlightOverlay.style.width = `${rect[2]}px`;
-                    pdfHighlightOverlay.style.height = `${rect[3]}px`;
-                    pdfHighlightOverlay.classList.remove('hidden');
+                if (source.rect) {
+                    // 在实际应用中，这里应该高亮显示指定区域
+                    console.log(`高亮区域: ${source.rect}`);
                 }
-                rightPane.style.boxShadow = "0 0 15px 5px rgba(59, 130, 246, 0.4)";
-                setTimeout(() => { rightPane.style.boxShadow = ""; }, 1500);
             } else if (source.type === 'url') {
-                if (source.link) window.open(source.link, '_blank');
-            } else if (source.type === 'reason') {
-                if (source.text) alert(`推理依据:\n${source.text}`);
-            }
-        }
-        
-        function renderVersionHistory() { /* ... (same) ... */  
-            versionHistoryList.innerHTML = '';
-            if (!currentResultData || !currentResultData.versions) return;
-            currentResultData.versions.forEach(v => {
-                const li = document.createElement('li');
-                li.className = `p-1.5 rounded-md hover:bg-slate-100 cursor-pointer border-l-2 border-transparent version-item ${displayedVersion && v.version === displayedVersion.version ? 'active' : ''}`;
-                li.innerHTML = `<div class="font-medium text-slate-700">版本 ${v.version} <span class="text-xs text-slate-500 font-normal">- ${v.date}</span></div>${v.notes ? `<div class="text-slate-500 truncate" title="${v.notes}">${v.notes}</div>` : ''}`;
-                li.onclick = () => {
-                    displayVersionContent(v);
-                    document.querySelectorAll('#version-history-list .version-item.active').forEach(item => item.classList.remove('active'));
-                    li.classList.add('active');
-                };
-                versionHistoryList.appendChild(li);
-            });
-        }
-        function updateMainActions() { /* ... (same) ... */ }
-        function toggleEditMode(enable) { /* ... (same) ... */ }
-        function toggleOriginalDocPane() { /* ... (same) ... */ }
-        
-        function toggleCollapsiblePanel(panelElement, caretElement) {
-            panelElement.classList.toggle('collapsed');
-            caretElement.classList.toggle('fa-chevron-down');
-            caretElement.classList.toggle('fa-chevron-up');
-            if (!panelElement.classList.contains('collapsed')) {
-                panelElement.style.maxHeight = panelElement.scrollHeight + "px";
-            } else {
-                panelElement.style.maxHeight = '0px';
-            }
-        }
-
-        if (toggleSourceListBtn) {
-            toggleSourceListBtn.addEventListener('click', () => toggleCollapsiblePanel(sourceListPanel, sourceListCaret));
-        }
-        if (toggleVersionHistoryBtn) {
-            toggleVersionHistoryBtn.addEventListener('click', () => toggleCollapsiblePanel(versionHistoryPanel, versionHistoryCaret));
-        }
-
-        function loadResultDetails(resultId) { /* ... (same, ensure initial panel states are set) ... */ 
-             currentResultId = resultId;
-            currentResultData = mockResultDetailsStore[resultId];
-
-            if (!currentResultData) { /* ... error handling ... */ return; }
-
-            resultMainTitle.textContent = `结果详情: ${currentResultData.name}`;
-            resultMainTitle.title = `结果详情: ${currentResultData.name}`;
-            resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
-            originalDocIframe.src = currentResultData.originalDocUrl || "about:blank";
-
-            if (currentResultData.versions && currentResultData.versions.length > 0) {
-                displayVersionContent(currentResultData.versions[0]); 
-                renderVersionHistory();
-            } else { /* ... handle no versions ... */ }
-            updateMainActions();
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            // ... (same DOMContentLoaded logic for URL params, save, approve, cancel) ...
-            // Initialize panel states (e.g., start collapsed)
-            [sourceListPanel, versionHistoryPanel].forEach(panel => {
-                if (panel && panel.classList.contains('collapsed')) {
-                    panel.style.maxHeight = '0px';
-                } else if (panel) {
-                    // If meant to be open by default and has content, set maxHeight
-                    // For this design, they start collapsed (caret up)
-                    panel.style.maxHeight = '0px'; // Ensure it respects collapsed class if set
-                    panel.classList.add('collapsed'); // Default to collapsed
-                    const caret = panel.id === 'source-list-panel' ? sourceListCaret : versionHistoryCaret;
-                    if(caret){
-                        caret.classList.remove('fa-chevron-down');
-                        caret.classList.add('fa-chevron-up');
-                    }
+                // 处理URL类型的源
+                if (source.link) {
+                    window.open(source.link, '_blank');
                 }
-            });
-             const urlParams = new URLSearchParams(window.location.search);
-            const resultIdFromUrl = urlParams.get('id');
-            if (resultIdFromUrl) {
-                loadResultDetails(decodeURIComponent(resultIdFromUrl));
-            } else {
-                resultMainTitle.textContent = "结果详情: 无效ID";
-                resultMainTitle.title = "结果详情: 无效ID";
-                updateMainActions(); 
             }
-            if(toggleOriginalDocBtn) toggleOriginalDocBtn.addEventListener('click', toggleOriginalDocPane);
-            if(document.getElementById('cancel-edit-btn')) document.getElementById('cancel-edit-btn').onclick = () => toggleEditMode(false);
-            if(document.getElementById('save-changes-btn')) document.getElementById('save-changes-btn').onclick = () => { /* ... (save logic as before) ... */ };
-            if(document.getElementById('approve-result-btn')) document.getElementById('approve-result-btn').onclick = () => { /* ... (approve logic as before) ... */ };
+        }
+
+        // 添加源引用事件监听
+        function attachSourceRefListeners() {
+            document.querySelectorAll('.source-ref').forEach(ref => {
+                ref.addEventListener('click', (e) => {
+                    const refId = e.target.dataset.refId;
+                    const source = displayedVersion.sources[refId];
+                    if (source) {
+                        handleSourceClick(source);
+                    }
+                });
+            });
+        }
+
+        // --- 事件监听器 ---
+        elements.copyResultBtn.addEventListener('click', copyResultContent);
+        elements.exportResultBtn.addEventListener('click', exportResult);
+        elements.reviewResultBtn.addEventListener('click', () => enterEditMode());
+        elements.saveChangesBtn.addEventListener('click', saveChanges);
+        elements.cancelEditBtn.addEventListener('click', exitEditMode);
+        elements.approveResultBtn.addEventListener('click', () => reviewResult(true));
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 从URL获取结果ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const resultId = urlParams.get('id');
+            
+            if (resultId && mockResultDetailsStore[resultId]) {
+                currentResultId = resultId;
+                currentResultData = mockResultDetailsStore[resultId];
+                displayedVersion = currentResultData.versions[0];
+                updateUI();
+                displayVersionContent(displayedVersion);
+            } else {
+                // 默认加载或错误处理
+                elements.resultMainTitle.textContent = `结果详情: ${resultId ? '无效ID' : '未指定ID'}`;
+                elements.resultStatusBadge.innerHTML = getStatusBadgeHTML('error');
+                elements.resultTextDisplay.innerHTML = '<div class="text-red-500">未找到结果数据，请检查ID是否正确</div>';
+            }
         });
     </script>
 </body>

@@ -1,0 +1,19 @@
+---
+description: 
+globs: usecase/cases/*
+alwaysApply: false
+---
+生成新用例:【用例名】
+1.用例模板参考：usecase/cases/example.md
+2.用例参考原型文件prototype下html 见附件
+输出：
+markdown文件至cases下，并在index.json中添加导航
+
+修改已有的用例:【用例名】
+1.用例模板参考：example.md
+2.在原用例基础上修改完善：【功能点】
+1）.支持提示词的选择、保存 2）. 默认进入显示最新的解析和回答 3）.支持文献标签的切 4）预设提示词为该文献关联的标签所关联的提示词
+3.用例参考原型文件prototype下html（如有）
+输出：
+markdown文件至cases下（markdown中标红跟原用例的差异），并在index.json中添加导航
+【原用例】（可从别处粘贴，或直接从cases中读取）

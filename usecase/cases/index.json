@@ -11,5 +11,11 @@
     },{
         "title": "提示词管理",
         "file": "prompt_management.md"
+    },{
+        "title": "查看文献管理",
+        "file": "view_literature_management.md"
+    },{
+        "title": "审核结果",
+        "file": "review_results.md"
     }
 ] 

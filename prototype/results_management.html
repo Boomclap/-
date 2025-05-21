@@ -138,7 +138,7 @@
                             <button class="text-blue-600 hover:text-blue-800 action-dropdown-toggle"><i class="fas fa-ellipsis-v"></i></button>
                             <div class="action-menu hidden bg-white border border-slate-200 rounded-md shadow-lg py-1 w-28">
                                 <a href="#" onclick="openResultDetail('${item.id}', '${item.name.replace(/['"]/g, '\\$&')}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">查看</a>
-                                <a href="#" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">导出</a>
+                                <a href="#" onclick="exportSingleResult('${item.id}')" class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100">导出</a>
                             </div>
                         </td>
                     </tr>
@@ -186,6 +186,49 @@
             });
         }
         
+        function exportSingleResult(resultId) {
+            const result = mockResultsData.find(item => item.id === resultId);
+            if (result) {
+                const exportData = {
+                    id: result.id,
+                    name: result.name,
+                    status: result.status,
+                    reviewer: result.reviewer,
+                    creator: result.creator,
+                    createdDate: result.createdDate,
+                    originalDoc: result.originalDoc 
+                    // Note: In a real scenario, you might want to fetch detailed version info here if needed
+                };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `result_${resultId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast(`结果 ${resultId} 已导出`);
+            } else {
+                showToast(`导出失败: 未找到结果 ${resultId}`, 'error');
+            }
+        }
+
+        // Helper function for toast (if not already present or want a local one)
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white ${
+                type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } shadow-lg z-50 transition-opacity duration-300`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         document.addEventListener('click', (event) => {
             // Hide action menus if clicked outside
             if (!event.target.closest('.action-dropdown-toggle') && !event.target.closest('.action-menu')) {
@@ -218,6 +261,17 @@
                 checkbox.checked = e.target.checked;
             });
         });
+
+        // Add ID to refresh button if it doesn't have one
+        // Assuming refresh button is the one with "刷新" text
+        // <button id="refresh-btn" class="px-3 py-2 text-sm bg-slate-500 text-white rounded-md hover:bg-slate-600 flex items-center"><i class="fas fa-sync-alt mr-1.5"></i> 刷新</button>
+        const refreshButton = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('刷新'));
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                showToast('正在刷新列表...');
+                renderTable(); // Or any more complex refresh logic
+            });
+        }
 
         // Initial render
         renderTable();
