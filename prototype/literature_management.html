@@ -33,7 +33,7 @@
             -webkit-box-orient: vertical;
         }
 
-        /* 上传对话框样式 */
+        /* 对话框样式 */
         .dialog-overlay {
             position: fixed;
             top: 0;
@@ -124,8 +124,12 @@
         <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 class="text-2xl font-semibold text-slate-800">文献管理</h1>
             <div class="flex items-center space-x-2 flex-wrap gap-y-2">
+                <button id="move-to-folder-btn" class="conditional-btn hidden opacity-0 transform scale-95 px-3 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"><i class="fas fa-folder-open mr-1.5"></i> 移动到文件夹</button>
                 <button id="batch-analysis-btn" class="conditional-btn hidden opacity-0 transform scale-95 px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center"><i class="fas fa-cogs mr-1.5"></i> 批量调研</button>
                 <button id="comprehensive-analysis-btn" class="conditional-btn hidden opacity-0 transform scale-95 px-3 py-2 text-sm bg-indigo-500 text-white rounded-md hover:bg-indigo-600 flex items-center"><i class="fas fa-microscope mr-1.5"></i> 综合调研</button>
+                <button id="batch-upload-parse-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-3 text-sm rounded-md flex items-center shadow-sm"> 
+                    <i class="fas fa-file-medical-alt mr-2"></i> 批量上传解析
+                </button>
                 <button id="upload-literature-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 text-sm rounded-md flex items-center shadow-sm"> 
                     <i class="fas fa-upload mr-2"></i> 上传文献
                 </button>
@@ -208,7 +212,7 @@
                 <!-- 文件上传区域 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-700 mb-1">文献上传</label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
+                    <div id="single-drop-zone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
                         <div class="space-y-1 text-center">
                             <i class="fas fa-cloud-upload-alt text-slate-400 text-3xl mb-3"></i>
                             <div class="flex text-sm text-slate-600">
@@ -243,7 +247,7 @@
                         </div>
                         <div class="flex space-x-2">
                             <input type="text" id="tag-input" class="flex-1 p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="输入以搜索标签...">
-                            <button onclick="showAddTagDialog()" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200">
+                            <button onclick="showAddTagDialog('single')" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -284,6 +288,7 @@
                     <label for="new-tag-desc" class="block text-sm font-medium text-slate-700 mb-1">标签描述（可选）</label>
                     <textarea id="new-tag-desc" rows="3" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入标签描述..."></textarea>
                 </div>
+                 <input type="hidden" id="add-tag-context"> <!-- To store context for tag addition -->
             </div>
             <div class="flex justify-end space-x-2 p-4 border-t border-slate-200">
                 <button onclick="closeAddTagDialog()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
@@ -296,13 +301,112 @@
         </div>
     </div>
 
+    <!-- 移动文献到文件夹对话框 -->
+    <div id="move-folder-dialog" class="dialog-overlay">
+        <div class="dialog-content" style="max-width: 500px;">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800">移动文献到文件夹</h2>
+                <button class="text-slate-400 hover:text-slate-500" onclick="closeMoveFolderDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-sm text-slate-600 mb-3">将 <span id="move-folder-item-count" class="font-semibold">0</span> 篇选中的文献移动到：</p>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">目标文件夹</label>
+                    <div class="relative">
+                        <input type="text" id="move-target-folder-input" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="输入以搜索或创建新文件夹...">
+                        <div id="move-target-folder-suggestions" class="folder-suggestions hidden">
+                            <!-- 文件夹建议将通过 JavaScript 动态添加 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 p-4 border-t border-slate-200">
+                <button onclick="closeMoveFolderDialog()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                    取消
+                </button>
+                <button onclick="submitMoveFolder()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    确定移动
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量上传与解析文献对话框 -->
+    <div id="batch-upload-dialog" class="dialog-overlay">
+        <div class="dialog-content" style="max-width: 700px;">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800">批量上传与解析文献</h2>
+                <button class="text-slate-400 hover:text-slate-500" onclick="closeBatchUploadDialog()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">选择文献文件 (可多选)</label>
+                    <div id="batch-drop-zone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <i class="fas fa-cloud-upload-alt text-slate-400 text-3xl mb-3"></i>
+                            <div class="flex text-sm text-slate-600">
+                                <label for="batch-file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>选择文件</span>
+                                    <input id="batch-file-upload" name="batch-file-upload" type="file" class="sr-only" accept=".pdf,.doc,.docx" multiple>
+                                </label>
+                                <p class="pl-1">或拖拽文件到这里</p>
+                            </div>
+                            <p class="text-xs text-slate-500">支持 PDF、Word 文档</p>
+                        </div>
+                    </div>
+                    <div id="batch-file-list" class="mt-3 text-sm max-h-32 overflow-y-auto custom-scrollbar">
+                        <!-- Selected files will be listed here -->
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">默认所属文件夹 (可选)</label>
+                    <div class="relative">
+                        <input type="text" id="batch-default-folder-input" class="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="输入以搜索文件夹...">
+                        <div id="batch-default-folder-suggestions" class="folder-suggestions hidden"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">默认文献标签 (可选)</label>
+                    <div class="tag-input-container">
+                        <div class="flex flex-wrap p-2 border border-slate-300 rounded-md mb-2 min-h-[42px]" id="batch-selected-tags"></div>
+                        <div class="flex space-x-2">
+                            <input type="text" id="batch-tag-input" class="flex-1 p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="输入以搜索标签...">
+                            <button onclick="showAddTagDialog('batch')" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="batch-tag-suggestions" class="tag-suggestions hidden"></div>
+                    </div>
+                </div>
+                <div id="batch-upload-progress" class="mt-4 text-sm max-h-40 overflow-y-auto custom-scrollbar">
+                    <!-- Progress messages will appear here -->
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 p-4 border-t border-slate-200">
+                <button onclick="closeBatchUploadDialog()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                    取消
+                </button>
+                <button onclick="startBatchUploadAndParse()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    开始批量上传和解析
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
-        const mockLiteratureData = [
-            { id: "lit001", title: "IBD最新研究进展与未来展望.pdf", authors: "王明, 李静", keywords: ["炎症性肠病", "治疗", "靶点", "免疫"], source: "中华医学杂志", uploadDate: "2024-03-10", tags: ["IBD", "综述"], status: "analyzed", originalDocUrl: "sample_doc1.pdf", articleType: "综述文章", publishYear: "2024", volume: "104", issue: "5", impactFactor: "3.567", doi: "10.3760/cma.j.cn112137-20231010-00123", abstractText: "炎症性肠病（IBD）是一组慢性、复发性肠道炎症性疾病...", citationsText: "Baumgart DC, Sandborn WJ. Crohn's disease. Lancet. 2012" },
-            { id: "lit002", title: "白芍化学成分及其抗炎活性研究.docx", authors: "张伟", keywords: ["白芍", "芍药苷", "抗炎", "天然产物"], source: "中草药", uploadDate: "2024-03-12", tags: ["药材", "白芍", "化学"], status: "processing", originalDocUrl: "sample_doc2.pdf", articleType: "研究原著", publishYear: "2023", volume: "54", issue: "10", impactFactor: "1.892", doi: "10.7501/j.issn.0253-2670.2023.10.00x", abstractText: "目的：研究白芍的化学成分及其主要成分的抗炎活性...", citationsText: "He X, Bai Y. Paeoniflorin: a review of its pharmacology. Fitoterapia. 2011" },
-            { id: "lit003", title: "炎症性肠病治疗靶点研究新进展.pdf", authors: "赵敏, 孙悦", keywords: ["IBD", "JAK抑制剂", "生物制剂"], source: "Elsevier - Journal of Crohn's and Colitis", uploadDate: "2024-02-20", tags: ["IBD", "药靶"], status: "unprocessed", originalDocUrl: "sample_doc3.pdf", articleType: "研究论文", publishYear: "2024", volume: "18", issue: "2", impactFactor: "9.071", doi: "10.1093/ecco-jcc/jjad180", abstractText: "Janus激酶（JAK）抑制剂作为一种新型口服小分子药物...", citationsText: "Torres J, et al. Lancet. 2017" },
-            { id: "lit004", title: "北豆根主要生物碱的药理作用探讨.pdf", authors: "周强", keywords: ["北豆根", "生物碱", "镇咳", "祛痰"], source: "Springer - Phytomedicine", uploadDate: "2024-01-15", tags: ["药材", "北豆根", "药理"], status: "analyzed", originalDocUrl: "sample_doc4.pdf", articleType: "实验研究", publishYear: "2023", volume: "110", issue: "", impactFactor: "6.656", doi: "10.1016/j.phymed.2022.154501", abstractText: "北豆根为防己科植物蝙蝠葛的干燥根茎...", citationsText: "《中华人民共和国药典》2020年版" },
-            { id: "lit005", title: "巴豆在现代临床中的应用及其安全性评估.pdf", authors: "吴刚, 陈晨", keywords: ["巴豆", "泻下", "毒性", "临床应用"], source: "医药导报", uploadDate: "2023-12-01", tags: ["药材", "巴豆", "临床研究"], status: "error", originalDocUrl: "sample_doc5.pdf", articleType: "临床报告", publishYear: "2022", volume: "41", issue: "S1", impactFactor: "0.985", doi: "10.3802/j.issn.1004-0781.2022.S1.xx", abstractText: "巴豆作为一种传统中药，具有峻下冷积、逐水退肿的功效...", citationsText: "国家药典委员会. 中华人民共和国药典临床用药须知:中药饮片卷. 2020." },
+        let mockLiteratureData = [ // Added folderId to mock data
+            { id: "lit001", title: "IBD最新研究进展与未来展望.pdf", authors: "王明, 李静", keywords: ["炎症性肠病", "治疗", "靶点", "免疫"], source: "中华医学杂志", uploadDate: "2024-03-10", tags: ["IBD", "综述"], status: "analyzed", originalDocUrl: "sample_doc1.pdf", folderId: "folder3", articleType: "综述文章", publishYear: "2024", volume: "104", issue: "5", impactFactor: "3.567", doi: "10.3760/cma.j.cn112137-20231010-00123", abstractText: "炎症性肠病（IBD）是一组慢性、复发性肠道炎症性疾病...", citationsText: "Baumgart DC, Sandborn WJ. Crohn's disease. Lancet. 2012" },
+            { id: "lit002", title: "白芍化学成分及其抗炎活性研究.docx", authors: "张伟", keywords: ["白芍", "芍药苷", "抗炎", "天然产物"], source: "中草药", uploadDate: "2024-03-12", tags: ["药材", "白芍", "化学"], status: "processing", originalDocUrl: "sample_doc2.pdf", folderId: "folder1", articleType: "研究原著", publishYear: "2023", volume: "54", issue: "10", impactFactor: "1.892", doi: "10.7501/j.issn.0253-2670.2023.10.00x", abstractText: "目的：研究白芍的化学成分及其主要成分的抗炎活性...", citationsText: "He X, Bai Y. Paeoniflorin: a review of its pharmacology. Fitoterapia. 2011" },
+            { id: "lit003", title: "炎症性肠病治疗靶点研究新进展.pdf", authors: "赵敏, 孙悦", keywords: ["IBD", "JAK抑制剂", "生物制剂"], source: "Elsevier - Journal of Crohn's and Colitis", uploadDate: "2024-02-20", tags: ["IBD", "药靶"], status: "unprocessed", originalDocUrl: "sample_doc3.pdf", folderId: "folder3", articleType: "研究论文", publishYear: "2024", volume: "18", issue: "2", impactFactor: "9.071", doi: "10.1093/ecco-jcc/jjad180", abstractText: "Janus激酶（JAK）抑制剂作为一种新型口服小分子药物...", citationsText: "Torres J, et al. Lancet. 2017" },
+            { id: "lit004", title: "北豆根主要生物碱的药理作用探讨.pdf", authors: "周强", keywords: ["北豆根", "生物碱", "镇咳", "祛痰"], source: "Springer - Phytomedicine", uploadDate: "2024-01-15", tags: ["药材", "北豆根", "药理"], status: "analyzed", originalDocUrl: "sample_doc4.pdf", folderId: "folder_other", articleType: "实验研究", publishYear: "2023", volume: "110", issue: "", impactFactor: "6.656", doi: "10.1016/j.phymed.2022.154501", abstractText: "北豆根为防己科植物蝙蝠葛的干燥根茎...", citationsText: "《中华人民共和国药典》2020年版" },
+            { id: "lit005", title: "巴豆在现代临床中的应用及其安全性评估.pdf", authors: "吴刚, 陈晨", keywords: ["巴豆", "泻下", "毒性", "临床应用"], source: "医药导报", uploadDate: "2023-12-01", tags: ["药材", "巴豆", "临床研究"], status: "error", originalDocUrl: "sample_doc5.pdf", folderId: "folder_other", articleType: "临床报告", publishYear: "2022", volume: "41", issue: "S1", impactFactor: "0.985", doi: "10.3802/j.issn.1004-0781.2022.S1.xx", abstractText: "巴豆作为一种传统中药，具有峻下冷积、逐水退肿的功效...", citationsText: "国家药典委员会. 中华人民共和国药典临床用药须知:中药饮片卷. 2020." },
         ];
 
         const literatureTableBody = document.getElementById('literature-table-body');
@@ -311,6 +415,7 @@
         const batchAnalysisBtn = document.getElementById('batch-analysis-btn');
         const comprehensiveAnalysisBtn = document.getElementById('comprehensive-analysis-btn');
         const selectAllCheckbox = document.getElementById('select-all-literature');
+        const moveToFolderBtn = document.getElementById('move-to-folder-btn');
 
         const itemsPerPageLit = 10;
         let currentPageLit = 1;
@@ -343,13 +448,7 @@
         }
 
         function renderLitTable() {
-            console.log('开始渲染表格');
-            console.log('Mock数据:', mockLiteratureData);
-            console.log('当前搜索词:', currentLitSearchTerm);
-            console.log('当前标签过滤:', currentLitTagFilter);
-            console.log('当前状态过滤:', currentLitStatusFilter);
-            
-            literatureTableBody.innerHTML = '';
+            literatureTableBody.innerHTML = ''; // Clear existing rows
             const filteredData = mockLiteratureData.filter(item => {
                 const matchesSearch = currentLitSearchTerm === '' || 
                                     item.title.toLowerCase().includes(currentLitSearchTerm.toLowerCase()) ||
@@ -365,6 +464,8 @@
             if (paginatedData.length === 0) {
                 literatureTableBody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-slate-500">没有符合条件的文献记录。</td></tr>`;
                 renderLitPagination(0);
+                selectAllCheckbox.checked = false; // Uncheck select all if no data
+                updateBatchButtonsState(); // Ensure buttons are in correct state
                 return;
             }
 
@@ -396,7 +497,11 @@
             });
             renderLitPagination(filteredData.length);
             attachLitActionMenuListeners();
-            updateBatchButtonsState();
+            // Add event listeners for individual checkboxes to update batch button states
+            document.querySelectorAll('.literature-item-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateBatchButtonsState);
+            });
+            updateBatchButtonsState(); // Initial call after rendering
         }
 
         function renderLitPagination(totalItems) {
@@ -459,7 +564,6 @@
 
         function showHideAnalysisButtons() {
             if (currentLitTagFilter && currentLitTagFilter !== "") {
-                // 显示按钮
                 [batchAnalysisBtn, comprehensiveAnalysisBtn].forEach(btn => {
                     btn.classList.remove('hidden');
                     setTimeout(() => {
@@ -468,7 +572,6 @@
                     }, 50);
                 });
             } else {
-                // 隐藏按钮
                 [batchAnalysisBtn, comprehensiveAnalysisBtn].forEach(btn => {
                     btn.classList.add('opacity-0', 'scale-95');
                     setTimeout(() => {
@@ -480,14 +583,34 @@
 
         function updateBatchButtonsState() {
             const selectedIds = getSelectedLiteratureIds();
-            if (selectedIds.length > 0) {
+            const anySelected = selectedIds.length > 0;
+
+            // Batch Analysis Button
+            if (anySelected) {
                 batchAnalysisBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 batchAnalysisBtn.disabled = false;
             } else {
                 batchAnalysisBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 batchAnalysisBtn.disabled = true;
             }
+
+            // Move to Folder Button
+            if (anySelected) {
+                moveToFolderBtn.classList.remove('hidden');
+                setTimeout(() => {
+                    moveToFolderBtn.classList.remove('opacity-0', 'scale-95');
+                    moveToFolderBtn.classList.add('opacity-100', 'scale-100');
+                }, 50);
+                moveToFolderBtn.disabled = false;
+            } else {
+                moveToFolderBtn.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    moveToFolderBtn.classList.add('hidden');
+                }, 300); // Match animation duration
+                moveToFolderBtn.disabled = true;
+            }
         }
+
 
         function getSelectedLiteratureIds() {
             const selectedIds = [];
@@ -527,154 +650,195 @@
             }
         });
 
-        // Initial setup
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('页面加载完成，开始初始化表格');
-            renderLitTable();
-            showHideAnalysisButtons();
-        });
-
         // 模拟数据
         let mockFolders = [
             { id: 'folder1', name: '白芍' },
             { id: 'folder2', name: '当归' },
             { id: 'folder3', name: 'IBD' },
-            { id: 'folder4', name: '免疫' }
+            { id: 'folder4', name: '免疫' },
+            { id: 'folder_other', name: '其他'}
         ];
 
         let mockTags = [
             { id: 'tag1', name: '指纹图谱', desc: '包含指纹图谱相关内容' },
             { id: 'tag2', name: '含量测定', desc: '包含含量测定相关内容' },
             { id: 'tag3', name: '临床研究', desc: '临床研究相关文献' },
-            { id: 'tag4', name: '综述', desc: '综述类文献' }
+            { id: 'tag4', name: '综述', desc: '综述类文献' },
+            { id: 'tagIBD', name: 'IBD', desc: '炎症性肠病相关' },
+            { id: 'tagYaocai', name: '药材', desc: '中药材相关' },
+            { id: 'tagHuaxue', name: '化学', desc: '化学成分、结构等' },
+            { id: 'tagYaoli', name: '药理', desc: '药理作用、机制等' },
+            { id: 'tagBaishao', name: '白芍', desc: '白芍专题' },
+            { id: 'tagBeidougen', name: '北豆根', desc: '北豆根专题' },
+            { id: 'tagBadou', name: '巴豆', desc: '巴豆专题' },
+            { id: 'tagYaoba', name: '药靶', desc: '药物靶点相关' },
         ];
 
-        // 当前选中的标签
-        let selectedTags = new Set();
+        // 当前选中的标签 (for single upload)
+        let singleUploadSelectedTags = new Set();
+        // 当前选中的标签 (for batch upload)
+        let batchUploadSelectedTags = new Set();
+
 
         // DOM 元素
         const uploadDialog = document.getElementById('upload-dialog');
         const uploadBtn = document.getElementById('upload-literature-btn');
-        const tagInput = document.getElementById('tag-input');
-        const tagSuggestions = document.getElementById('tag-suggestions');
-        const selectedTagsContainer = document.getElementById('selected-tags');
-        const folderInput = document.getElementById('folder-input');
-        const folderSuggestions = document.getElementById('folder-suggestions');
+        const singleTagInput = document.getElementById('tag-input');
+        const singleTagSuggestions = document.getElementById('tag-suggestions');
+        const singleSelectedTagsContainer = document.getElementById('selected-tags');
+        const singleFolderInput = document.getElementById('folder-input');
+        const singleFolderSuggestions = document.getElementById('folder-suggestions');
         const addTagDialog = document.getElementById('add-tag-dialog');
+        const addTagContextInput = document.getElementById('add-tag-context');
         const fileUpload = document.getElementById('file-upload');
 
-        // 显示上传对话框
+        // 显示上传文献对话框
         uploadBtn.addEventListener('click', () => {
             uploadDialog.classList.add('active');
             // 重置表单
             fileUpload.value = '';
-            folderInput.value = '';
-            folderInput.dataset.selectedId = '';
-            selectedTags.clear();
-            renderSelectedTags();
+            singleFolderInput.value = '';
+            singleFolderInput.dataset.selectedId = '';
+            singleUploadSelectedTags.clear();
+            renderSelectedTagsUI('single');
         });
 
-        // 关闭上传对话框
+        // 关闭上传文献对话框
         function closeDialog() {
             uploadDialog.classList.remove('active');
         }
+        
+        // 文件夹搜索和选择 (generic function)
+        function setupFolderInput(inputEl, suggestionsEl, onSelectCallback) {
+            inputEl.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredFolders = mockFolders.filter(folder => 
+                    folder.name.toLowerCase().includes(searchTerm)
+                );
+                
+                if (filteredFolders.length > 0 && searchTerm) {
+                    suggestionsEl.innerHTML = filteredFolders
+                        .map(folder => `
+                            <div class="p-2 hover:bg-slate-100 cursor-pointer" 
+                                 data-folder-id="${folder.id}" data-folder-name="${folder.name}">
+                                ${folder.name}
+                            </div>
+                        `).join('');
+                    suggestionsEl.classList.remove('hidden');
 
-        // 文件夹搜索和选择
-        folderInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredFolders = mockFolders.filter(folder => 
-                folder.name.toLowerCase().includes(searchTerm)
-            );
-            
-            if (filteredFolders.length > 0 && searchTerm) {
-                folderSuggestions.innerHTML = filteredFolders
-                    .map(folder => `
-                        <div class="p-2 hover:bg-slate-100 cursor-pointer" 
-                             onclick="selectFolder('${folder.id}', '${folder.name}')">
-                            ${folder.name}
-                        </div>
-                    `).join('');
-                folderSuggestions.classList.remove('hidden');
-            } else {
-                folderSuggestions.classList.add('hidden');
-            }
-        });
+                    suggestionsEl.querySelectorAll('div[data-folder-id]').forEach(item => {
+                        item.addEventListener('click', () => {
+                            onSelectCallback(item.dataset.folderId, item.dataset.folderName);
+                            suggestionsEl.classList.add('hidden');
+                        });
+                    });
 
-        // 标签搜索和选择
-        tagInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredTags = mockTags.filter(tag => 
-                tag.name.toLowerCase().includes(searchTerm) && 
-                !selectedTags.has(tag.id)
-            );
-            
-            if (filteredTags.length > 0 && searchTerm) {
-                tagSuggestions.innerHTML = filteredTags
-                    .map(tag => `
-                        <div class="p-2 hover:bg-slate-100 cursor-pointer" 
-                             onclick="selectTag('${tag.id}', '${tag.name}')">
-                            <div class="font-medium">${tag.name}</div>
-                            ${tag.desc ? `<div class="text-xs text-slate-500">${tag.desc}</div>` : ''}
-                        </div>
-                    `).join('');
-                tagSuggestions.classList.remove('hidden');
-            } else {
-                tagSuggestions.classList.add('hidden');
-            }
-        });
-
-        // 选择文件夹
-        function selectFolder(folderId, folderName) {
-            folderInput.value = folderName;
-            folderInput.dataset.selectedId = folderId;
-            folderSuggestions.classList.add('hidden');
+                } else {
+                    suggestionsEl.classList.add('hidden');
+                }
+            });
+             inputEl.addEventListener('blur', () => { // Hide suggestions on blur if not clicking a suggestion
+                setTimeout(() => { 
+                    if (!suggestionsEl.contains(document.activeElement)) {
+                        suggestionsEl.classList.add('hidden');
+                    }
+                }, 100);
+            });
         }
 
+        // Setup for single upload folder input
+        setupFolderInput(singleFolderInput, singleFolderSuggestions, (folderId, folderName) => {
+            singleFolderInput.value = folderName;
+            singleFolderInput.dataset.selectedId = folderId;
+        });
+
+
+        // 标签搜索和选择 (generic function)
+        function setupTagInput(inputEl, suggestionsEl, context) {
+            inputEl.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const currentSelectedTagSet = context === 'single' ? singleUploadSelectedTags : batchUploadSelectedTags;
+                const filteredTags = mockTags.filter(tag => 
+                    tag.name.toLowerCase().includes(searchTerm) && 
+                    !currentSelectedTagSet.has(tag.id)
+                );
+                
+                if (filteredTags.length > 0 && searchTerm) {
+                    suggestionsEl.innerHTML = filteredTags
+                        .map(tag => `
+                            <div class="p-2 hover:bg-slate-100 cursor-pointer" 
+                                 data-tag-id="${tag.id}" data-tag-name="${tag.name}">
+                                <div class="font-medium">${tag.name}</div>
+                                ${tag.desc ? `<div class="text-xs text-slate-500">${tag.desc}</div>` : ''}
+                            </div>
+                        `).join('');
+                    suggestionsEl.classList.remove('hidden');
+
+                    suggestionsEl.querySelectorAll('div[data-tag-id]').forEach(item => {
+                        item.addEventListener('click', () => {
+                            selectTag(item.dataset.tagId, item.dataset.tagName, context);
+                            inputEl.value = ''; // Clear input after selection
+                            suggestionsEl.classList.add('hidden');
+                        });
+                    });
+
+                } else {
+                    suggestionsEl.classList.add('hidden');
+                }
+            });
+             inputEl.addEventListener('blur', () => {
+                setTimeout(() => {
+                     if (!suggestionsEl.contains(document.activeElement)) {
+                        suggestionsEl.classList.add('hidden');
+                    }
+                }, 100);
+            });
+        }
+
+        // Setup for single upload tag input
+        setupTagInput(singleTagInput, singleTagSuggestions, 'single');
+
         // 选择标签
-        function selectTag(tagId, tagName) {
-            if (!selectedTags.has(tagId)) {
-                selectedTags.add(tagId);
-                const tagElement = document.createElement('div');
-                tagElement.className = 'selected-tag';
-                tagElement.innerHTML = `
-                    ${tagName}
-                    <button class="ml-1 text-blue-700 hover:text-blue-800" onclick="removeTag('${tagId}')">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                selectedTagsContainer.appendChild(tagElement);
-                tagInput.value = '';
-                tagSuggestions.classList.add('hidden');
+        function selectTag(tagId, tagName, context) {
+            const currentSelectedTagSet = context === 'single' ? singleUploadSelectedTags : batchUploadSelectedTags;
+            if (!currentSelectedTagSet.has(tagId)) {
+                currentSelectedTagSet.add(tagId);
+                renderSelectedTagsUI(context);
             }
         }
 
         // 移除标签
-        function removeTag(tagId) {
-            selectedTags.delete(tagId);
-            renderSelectedTags();
+        function removeTag(tagId, context) {
+            const currentSelectedTagSet = context === 'single' ? singleUploadSelectedTags : batchUploadSelectedTags;
+            currentSelectedTagSet.delete(tagId);
+            renderSelectedTagsUI(context);
         }
 
         // 渲染已选标签
-        function renderSelectedTags() {
-            selectedTagsContainer.innerHTML = '';
-            for (const tagId of selectedTags) {
+        function renderSelectedTagsUI(context) {
+            const container = context === 'single' ? singleSelectedTagsContainer : document.getElementById('batch-selected-tags');
+            const currentSelectedTagSet = context === 'single' ? singleUploadSelectedTags : batchUploadSelectedTags;
+            
+            container.innerHTML = '';
+            for (const tagId of currentSelectedTagSet) {
                 const tag = mockTags.find(t => t.id === tagId);
                 if (tag) {
                     const tagElement = document.createElement('div');
                     tagElement.className = 'selected-tag';
                     tagElement.innerHTML = `
                         ${tag.name}
-                        <button class="ml-1 text-blue-700 hover:text-blue-800" onclick="removeTag('${tag.id}')">
+                        <button class="ml-1 text-blue-700 hover:text-blue-800" onclick="removeTag('${tag.id}', '${context}')">
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-                    selectedTagsContainer.appendChild(tagElement);
+                    container.appendChild(tagElement);
                 }
             }
         }
 
         // 显示添加标签对话框
-        function showAddTagDialog() {
+        function showAddTagDialog(context) { // context can be 'single' or 'batch'
+            addTagContextInput.value = context;
             addTagDialog.classList.add('active');
         }
 
@@ -683,60 +847,69 @@
             addTagDialog.classList.remove('active');
             document.getElementById('new-tag-name').value = '';
             document.getElementById('new-tag-desc').value = '';
+            addTagContextInput.value = '';
         }
 
         // 提交新标签
         function submitNewTag() {
             const tagName = document.getElementById('new-tag-name').value.trim();
             const tagDesc = document.getElementById('new-tag-desc').value.trim();
+            const context = addTagContextInput.value;
             
             if (!tagName) {
                 alert('请输入标签名！');
                 return;
             }
-
-            // 检查标签名是否已存在
-            if (mockTags.some(tag => tag.name === tagName)) {
+            if (mockTags.some(tag => tag.name.toLowerCase() === tagName.toLowerCase())) {
                 alert('该标签名已存在！');
                 return;
             }
 
-            // 创建新标签
             const newTag = {
-                id: 'tag' + (mockTags.length + 1),
+                id: 'tag' + (mockTags.length + Date.now()), // More unique ID
                 name: tagName,
                 desc: tagDesc
             };
             mockTags.push(newTag);
-
-            // 自动选中新创建的标签
-            selectTag(newTag.id, newTag.name);
+            selectTag(newTag.id, newTag.name, context);
             closeAddTagDialog();
         }
 
-        // 提交上传
+        // 提交上传 (single)
         function submitUpload() {
             const file = fileUpload.files[0];
-            const folderId = folderInput.dataset.selectedId;
-            const folderName = folderInput.value;
-            const selectedTagIds = Array.from(selectedTags);
+            const folderId = singleFolderInput.dataset.selectedId;
+            const folderName = singleFolderInput.value;
+            const selectedTagIds = Array.from(singleUploadSelectedTags);
 
             if (!file) {
                 alert('请选择要上传的文件！');
                 return;
             }
+            // For single upload, folder is not strictly required by original logic, but good to have
+            // if (!folderId) {
+            //     alert('请选择所属文件夹！');
+            //     return;
+            // }
 
-            if (!folderId) {
-                alert('请选择所属文件夹！');
-                return;
-            }
+            // Add new literature item
+            const newLitId = "lit" + Date.now();
+            const newLit = {
+                id: newLitId,
+                title: file.name,
+                authors: "未知作者",
+                keywords: [],
+                source: "未知来源",
+                uploadDate: new Date().toISOString().split('T')[0],
+                tags: selectedTagIds.map(id => mockTags.find(t => t.id === id)?.name).filter(Boolean),
+                status: "unprocessed",
+                originalDocUrl: URL.createObjectURL(file), // Temporary URL for demo
+                folderId: folderId || "folder_other", // Default if not selected
+                // Add other default fields if necessary
+            };
+            mockLiteratureData.unshift(newLit); // Add to the beginning
+            renderLitTable();
 
-            if (selectedTagIds.length === 0) {
-                alert('请至少选择一个标签！');
-                return;
-            }
-
-            // 在实际应用中，这里应该调用上传 API
             console.log('上传文件:', {
                 file: file.name,
                 folderId,
@@ -747,37 +920,260 @@
             closeDialog();
         }
 
-        // 点击外部关闭建议列表和对话框
+        // 点击外部关闭建议列表
         document.addEventListener('click', (e) => {
-            if (!tagInput.contains(e.target) && !tagSuggestions.contains(e.target)) {
-                tagSuggestions.classList.add('hidden');
+            if (!singleTagInput.contains(e.target) && !singleTagSuggestions.contains(e.target)) {
+                singleTagSuggestions.classList.add('hidden');
             }
-            if (!folderInput.contains(e.target) && !folderSuggestions.contains(e.target)) {
-                folderSuggestions.classList.add('hidden');
+            if (!singleFolderInput.contains(e.target) && !singleFolderSuggestions.contains(e.target)) {
+                singleFolderSuggestions.classList.add('hidden');
+            }
+            // For batch dialogs
+            const batchTagIn = document.getElementById('batch-tag-input');
+            const batchTagSuggest = document.getElementById('batch-tag-suggestions');
+            if (batchTagIn && batchTagSuggest && !batchTagIn.contains(e.target) && !batchTagSuggest.contains(e.target)) {
+                batchTagSuggest.classList.add('hidden');
+            }
+            const batchFolderIn = document.getElementById('batch-default-folder-input');
+            const batchFolderSuggest = document.getElementById('batch-default-folder-suggestions');
+             if (batchFolderIn && batchFolderSuggest && !batchFolderIn.contains(e.target) && !batchFolderSuggest.contains(e.target)) {
+                batchFolderSuggest.classList.add('hidden');
+            }
+            const moveFolderIn = document.getElementById('move-target-folder-input');
+            const moveFolderSuggest = document.getElementById('move-target-folder-suggestions');
+            if (moveFolderIn && moveFolderSuggest && !moveFolderIn.contains(e.target) && !moveFolderSuggest.contains(e.target)) {
+                moveFolderSuggest.classList.add('hidden');
             }
         });
 
-        // 文件拖放上传
-        const dropZone = document.querySelector('.border-dashed');
+        // 文件拖放上传 (single)
+        const singleDropZone = document.getElementById('single-drop-zone');
         
-        dropZone.addEventListener('dragover', (e) => {
+        singleDropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropZone.classList.add('border-blue-500');
+            singleDropZone.classList.add('border-blue-500');
         });
-
-        dropZone.addEventListener('dragleave', (e) => {
+        singleDropZone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-blue-500');
+            singleDropZone.classList.remove('border-blue-500');
         });
-
-        dropZone.addEventListener('drop', (e) => {
+        singleDropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-blue-500');
-            
+            singleDropZone.classList.remove('border-blue-500');
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                fileUpload.files = files;
+                fileUpload.files = files; // Assigns to the input
+                // Optionally, display file name here or trigger change event
             }
+        });
+
+        // --- Move to Folder Functionality ---
+        const moveFolderDialog = document.getElementById('move-folder-dialog');
+        const moveTargetFolderInput = document.getElementById('move-target-folder-input');
+        const moveTargetFolderSuggestions = document.getElementById('move-target-folder-suggestions');
+        const moveFolderItemCount = document.getElementById('move-folder-item-count');
+
+        moveToFolderBtn.addEventListener('click', () => {
+            const selectedIds = getSelectedLiteratureIds();
+            if (selectedIds.length > 0) {
+                moveFolderItemCount.textContent = selectedIds.length;
+                moveTargetFolderInput.value = '';
+                moveTargetFolderInput.dataset.selectedId = '';
+                moveTargetFolderSuggestions.classList.add('hidden');
+                moveFolderDialog.classList.add('active');
+            }
+        });
+
+        function closeMoveFolderDialog() {
+            moveFolderDialog.classList.remove('active');
+        }
+        
+        setupFolderInput(moveTargetFolderInput, moveTargetFolderSuggestions, (folderId, folderName) => {
+            moveTargetFolderInput.value = folderName;
+            moveTargetFolderInput.dataset.selectedId = folderId;
+        });
+
+        function submitMoveFolder() {
+            const selectedLitIds = getSelectedLiteratureIds();
+            let targetFolderId = moveTargetFolderInput.dataset.selectedId;
+            const targetFolderName = moveTargetFolderInput.value.trim();
+
+            if (selectedLitIds.length === 0) {
+                alert("没有选中的文献。");
+                return;
+            }
+            if (!targetFolderName) {
+                alert("请输入或选择目标文件夹。");
+                return;
+            }
+
+            // If folder ID is not set (new folder) or folder doesn't exist, create it
+            if (!targetFolderId) {
+                 const existingFolder = mockFolders.find(f => f.name.toLowerCase() === targetFolderName.toLowerCase());
+                 if (existingFolder) {
+                     targetFolderId = existingFolder.id;
+                 } else {
+                    targetFolderId = "folder" + Date.now();
+                    mockFolders.push({ id: targetFolderId, name: targetFolderName });
+                    console.log("Created new folder:", { id: targetFolderId, name: targetFolderName });
+                 }
+            }
+            
+            selectedLitIds.forEach(litId => {
+                const litItem = mockLiteratureData.find(item => item.id === litId);
+                if (litItem) {
+                    litItem.folderId = targetFolderId; 
+                    // In a real app, you'd also update the folder name if needed, or just rely on ID.
+                }
+            });
+
+            alert(`${selectedLitIds.length}篇文献已移动到文件夹 "${targetFolderName}"。`);
+            closeMoveFolderDialog();
+            renderLitTable(); // Re-render to reflect changes if folder was displayed or used in filtering
+            // Clear selections
+            selectAllCheckbox.checked = false;
+            document.querySelectorAll('.literature-item-checkbox:checked').forEach(cb => cb.checked = false);
+            updateBatchButtonsState();
+        }
+
+
+        // --- Batch Upload & Parse Functionality ---
+        const batchUploadParseBtn = document.getElementById('batch-upload-parse-btn');
+        const batchUploadDialog = document.getElementById('batch-upload-dialog');
+        const batchFileUploadInput = document.getElementById('batch-file-upload');
+        const batchFileListContainer = document.getElementById('batch-file-list');
+        const batchDefaultFolderInput = document.getElementById('batch-default-folder-input');
+        const batchDefaultFolderSuggestions = document.getElementById('batch-default-folder-suggestions');
+        const batchTagInput = document.getElementById('batch-tag-input');
+        const batchTagSuggestions = document.getElementById('batch-tag-suggestions');
+        const batchSelectedTagsContainer = document.getElementById('batch-selected-tags');
+        const batchUploadProgressContainer = document.getElementById('batch-upload-progress');
+        const batchDropZone = document.getElementById('batch-drop-zone');
+
+        batchUploadParseBtn.addEventListener('click', () => {
+            batchUploadDialog.classList.add('active');
+            // Reset batch form
+            batchFileUploadInput.value = ''; 
+            batchFileListContainer.innerHTML = '';
+            batchDefaultFolderInput.value = '';
+            batchDefaultFolderInput.dataset.selectedId = '';
+            batchUploadSelectedTags.clear();
+            renderSelectedTagsUI('batch');
+            batchUploadProgressContainer.innerHTML = '';
+        });
+
+        function closeBatchUploadDialog() {
+            batchUploadDialog.classList.remove('active');
+        }
+
+        batchFileUploadInput.addEventListener('change', displayBatchFiles);
+        function displayBatchFiles() {
+            batchFileListContainer.innerHTML = '';
+            if (batchFileUploadInput.files.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-disc pl-5 space-y-1';
+                Array.from(batchFileUploadInput.files).forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    ul.appendChild(li);
+                });
+                batchFileListContainer.appendChild(ul);
+            } else {
+                batchFileListContainer.innerHTML = '<p class="text-slate-500">未选择文件。</p>';
+            }
+        }
+        
+        // Setup for batch upload folder input
+        setupFolderInput(batchDefaultFolderInput, batchDefaultFolderSuggestions, (folderId, folderName) => {
+            batchDefaultFolderInput.value = folderName;
+            batchDefaultFolderInput.dataset.selectedId = folderId;
+        });
+        
+        // Setup for batch upload tag input
+        setupTagInput(batchTagInput, batchTagSuggestions, 'batch');
+
+        function startBatchUploadAndParse() {
+            const files = batchFileUploadInput.files;
+            let defaultFolderId = batchDefaultFolderInput.dataset.selectedId;
+            const defaultFolderName = batchDefaultFolderInput.value.trim();
+            const defaultTagIds = Array.from(batchUploadSelectedTags);
+            const defaultTags = defaultTagIds.map(id => mockTags.find(t => t.id === id)?.name).filter(Boolean);
+
+            if (files.length === 0) {
+                alert("请选择要上传的文件。");
+                return;
+            }
+
+            // Handle default folder creation if new
+            if (defaultFolderName && !defaultFolderId) {
+                const existingFolder = mockFolders.find(f => f.name.toLowerCase() === defaultFolderName.toLowerCase());
+                if (existingFolder) {
+                    defaultFolderId = existingFolder.id;
+                } else {
+                    defaultFolderId = "folder" + Date.now();
+                    mockFolders.push({ id: defaultFolderId, name: defaultFolderName });
+                    console.log("Created new default folder for batch:", { id: defaultFolderId, name: defaultFolderName });
+                }
+            }
+            
+            batchUploadProgressContainer.innerHTML = '<p class="font-semibold mb-2">处理中...</p>';
+            let successfulUploads = 0;
+
+            Array.from(files).forEach((file, index) => {
+                setTimeout(() => { // Simulate processing delay
+                    const newLitId = "litBatch" + Date.now() + index;
+                    const newLit = {
+                        id: newLitId,
+                        title: file.name,
+                        authors: "待解析",
+                        keywords: [],
+                        source: "待解析",
+                        uploadDate: new Date().toISOString().split('T')[0],
+                        tags: [...defaultTags], // Copy default tags
+                        status: "unprocessed", // Or 'processing'
+                        originalDocUrl: URL.createObjectURL(file), // Temporary URL
+                        folderId: defaultFolderId || "folder_other", // Use default or a general fallback
+                        // Add other relevant default fields
+                    };
+                    mockLiteratureData.unshift(newLit);
+                    batchUploadProgressContainer.innerHTML += `<p class="text-green-600"><i class="fas fa-check-circle mr-1"></i> ${file.name} - 添加成功。</p>`;
+                    successfulUploads++;
+
+                    if (successfulUploads === files.length) {
+                        batchUploadProgressContainer.innerHTML += `<p class="font-semibold mt-2 text-blue-600">所有文件处理完毕！共 ${successfulUploads} 篇文献已添加。</p>`;
+                        renderLitTable();
+                        // Optionally close dialog after a delay or keep it open to show results
+                        // setTimeout(closeBatchUploadDialog, 2000);
+                    }
+                }, index * 500); // Stagger processing for demo
+            });
+        }
+
+        // Drag and drop for batch upload
+        batchDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            batchDropZone.classList.add('border-blue-500');
+        });
+        batchDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            batchDropZone.classList.remove('border-blue-500');
+        });
+        batchDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            batchDropZone.classList.remove('border-blue-500');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                batchFileUploadInput.files = files;
+                displayBatchFiles();
+            }
+        });
+
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLitTable();
+            showHideAnalysisButtons();
+            updateBatchButtonsState(); // Ensure buttons are correct on load
         });
     </script>
 </body>
