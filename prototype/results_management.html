@@ -155,7 +155,7 @@
             if (totalPages <= 1) return;
 
             // Previous Button
-            paginationControls.innerHTML += `<button data-page="${currentPage - 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === 1 ? 'disabled' : ''}>&lt; Previous</button>`;
+            paginationControls.innerHTML += `<button data-page="${currentPage - 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === 1 ? 'disabled' : ''}>< Previous</button>`;
             
             // Page Numbers
             for (let i = 1; i <= totalPages; i++) {
@@ -163,7 +163,7 @@
             }
 
             // Next Button
-            paginationControls.innerHTML += `<button data-page="${currentPage + 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === totalPages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === totalPages ? 'disabled' : ''}>Next &gt;</button>`;
+            paginationControls.innerHTML += `<button data-page="${currentPage + 1}" class="px-3 py-1 text-sm rounded-md ${currentPage === totalPages ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}" ${currentPage === totalPages ? 'disabled' : ''}>Next ></button>`;
             
             document.querySelectorAll('#pagination-controls button[data-page]').forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -262,14 +262,15 @@
             });
         });
 
-        // Add ID to refresh button if it doesn't have one
-        // Assuming refresh button is the one with "刷新" text
-        // <button id="refresh-btn" class="px-3 py-2 text-sm bg-slate-500 text-white rounded-md hover:bg-slate-600 flex items-center"><i class="fas fa-sync-alt mr-1.5"></i> 刷新</button>
         const refreshButton = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('刷新'));
         if (refreshButton) {
             refreshButton.addEventListener('click', () => {
                 showToast('正在刷新列表...');
-                renderTable(); // Or any more complex refresh logic
+                // Simulate data fetch if needed, for now just re-render
+                setTimeout(() => {
+                    renderTable(); 
+                    showToast('列表已刷新');
+                }, 500);
             });
         }
 

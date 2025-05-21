@@ -17,10 +17,10 @@
         .status-rejected { background-color: #fee2e2; color: #b91c1c; }
         .version-item.active { background-color: #e0f2fe; border-left-color: #0ea5e9; }
         .result-content-display { white-space: pre-wrap; word-wrap: break-word; line-height: 1.8; } 
-        #original-doc-iframe { min-height: calc(100vh - 150px); }
+        #original-doc-iframe { min-height: calc(100vh - 150px); } /* Adjusted for header height */
         .pane-transition { transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
 
-        .source-ref { /* ... (same as before) ... */
+        .source-ref {
             font-size: 0.7em; font-weight: 600; padding: 0.5px 2.5px; border-radius: 3px;
             background-color: #e0e7ff; color: #3730a3; cursor: pointer;
             margin-left: 2px; vertical-align: super; line-height: 1; position: relative; 
@@ -31,36 +31,34 @@
         .ref-tooltip {
             visibility: hidden; width: 320px; background-color: #1f2937; 
             color: #f9fafb; text-align: left; border-radius: 6px;
-            padding: 10px 12px; position: absolute; z-index: 999; /* Increased z-index */
+            padding: 10px 12px; position: absolute; z-index: 999;
             bottom: 160%; left: 50%; transform: translateX(-50%);
             opacity: 0; transition: opacity 0.2s, visibility 0.2s;
             font-size: 0.78rem; line-height: 1.5; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             pointer-events: none; 
         }
         .source-ref:hover .ref-tooltip, .source-ref:focus-visible .ref-tooltip { visibility: visible; opacity: 1; pointer-events: auto; }
-        .ref-tooltip::after { /* ... (same as before) ... */
+        .ref-tooltip::after {
             content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px;
             border-width: 6px; border-style: solid; border-color: #1f2937 transparent transparent transparent;
         }
         .ref-tooltip strong { color: #9ca3af; display: block; margin-bottom: 3px;}
         .ref-tooltip a { color: #60a5fa; text-decoration: underline; }
         .ref-tooltip a:hover { color: #93c5fd; }
-        .ref-tooltip .source-text-snippet { /* ... (same as before) ... */
+        .ref-tooltip .source-text-snippet {
             display: block; background-color: #4a5568; padding: 5px; border-radius: 3px; margin-top: 4px;
             max-height: 60px; overflow-y: auto; font-style: italic; font-size: 0.75rem;
         }
 
-        .collapsible-panel { transition: max-height 0.35s cubic-bezier(0.25, 0.1, 0.25, 1); overflow: hidden; }
+        .collapsible-panel { transition: max-height 0.35s cubic-bezier(0.25, 0.1, 0.25, 1), padding-top 0.35s, padding-bottom 0.35s, border-top-width 0.35s, margin-bottom 0.35s; overflow: hidden; }
         .collapsible-panel.collapsed { max-height: 0px !important; padding-top: 0 !important; padding-bottom: 0 !important; border-top-width: 0 !important; margin-bottom: 0 !important; }
         
-        #source-list-panel { max-height: 250px; /* Increased default visible height */ }
-        #version-history-panel { max-height: 200px; /* Default visible height for version history */ }
+        #source-list-panel { max-height: 250px; }
+        #version-history-panel { max-height: 200px; }
 
-        .source-list-item { /* ... (same as before) ... */ }
-        .source-list-item .ref-number { /* ... (same as before) ... */ }
-
-        .pdf-highlight-overlay { /* ... (same as before) ... */ }
-        .pdf-page-indicator { /* ... (same as before) ... */ }
+        .source-list-item { /* Basic styling, can be enhanced */ }
+        .pdf-highlight-overlay { /* Placeholder */ }
+        .pdf-page-indicator { /* Placeholder */ }
     </style>
 </head>
 <body class="bg-slate-100 font-sans">
@@ -148,7 +146,7 @@
                 <div class="p-1 flex-grow custom-scrollbar overflow-auto relative bg-slate-200">
                     <iframe id="original-doc-iframe" src="" class="w-full h-full border-none" title="Original Document"></iframe>
                     <div id="pdf-highlight-overlay" class="pdf-highlight-overlay hidden"></div>
-                    <div id="pdf-page-indicator" class="pdf-page-indicator">Page ?</div>
+                    <div id="pdf-page-indicator" class="pdf-page-indicator hidden">Page ?</div>
                 </div>
             </div>
         </main>
@@ -168,7 +166,7 @@
                         date: "2025-02-20", 
                         editor: "张三", 
                         notes: "更新为编号引用格式", 
-                        content: "文献明确指出[[白芍总苷具有显著的抗炎、镇痛双重药理作用|refs:s1]]。其主要活性成分包括[[芍药苷|refs:s1]]和羟基芍药苷等。这些发现与[[一项重要的外部研究|refs:s2]]的结果相符。因此，综合来看，[[白芍作为传统中药，其药用价值得到了现代药理学的支持|refs:s3]]。这句话同时参考了[[文献和外部链接|refs:s1,s2]]。",
+                        content: "文献明确指出[[白芍总苷具有显著的抗炎、镇痛双重药理作用|refs:s1]]。其主要活性成分包括[[芍药苷|refs:s1]]和羟基芍药苷等。这些发现与[[一项重要的外部研究|refs:s2]]的结果相符。因此，综合来看，[[白芍作为传统中药，其药用价值得到了现代药理学的支持|refs:s1]]。这句话同时参考了[[文献和外部链接|refs:s1,s2]]。",
                         sources: {
                             "s1": { type: "doc", page: 2, rect: "50,100,300,40", sel: "段落开头'白芍总苷...'", displayText: "本文献，第 2 页，高亮区域", docSnippet: "白芍总苷具有显著的抗炎、镇痛双重药理作用，对多种炎症模型均显示出良好的抑制效果..." },
                             "s2": { type: "url", link: "https://pubmed.ncbi.nlm.nih.gov/12345678/", displayText: "外部研究: PubMed ID 12345678" },
@@ -177,6 +175,28 @@
                         reviewComment: "内容准确，引用规范",
                         reviewDate: "2025-02-21",
                         reviewer: "李四"
+                    }
+                    // Older versions can be added here if needed
+                ]
+            },
+            "res002": {
+                name: "白芍文献2的核心观点提炼",
+                status: "pending", 
+                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf", 
+                currentVersion: "v1.0",
+                versions: [
+                    {
+                        version: "v1.0",
+                        date: "2025-02-18", 
+                        editor: "赵六", 
+                        notes: "初步提炼",
+                        content: "[[白芍文献2的主要观点是白芍对特定细胞通路的影响|refs:s1]]。进一步研究表明[[其作用机制涉及多个靶点|refs:s2]]。该文献还讨论了[[临床应用的潜在挑战与机遇|refs:s3]]。",
+                        sources: {
+                            "s1": { type: "doc", page: 1, displayText: "文献2第1页摘要" },
+                            "s2": { type: "doc", page: 3, displayText: "文献2第3页讨论部分", docSnippet: "作用机制复杂，涉及多个信号通路..." },
+                            "s3": { type: "url", link: "https://example.com/clinicaltrials/baishao", displayText: "相关临床试验注册信息" }
+                        },
+                        approved: false
                     }
                 ]
             },
@@ -197,10 +217,66 @@
                             "s2": { type: "url", link: "https://example.com/research/ibd", displayText: "外部研究：黄芩素功效分析" },
                             "s3": { type: "doc", page: 3, displayText: "文献第3页结论部分" }
                         },
-                        approved: false,
+                        approved: false, // This version was rejected
                         reviewComment: "内容有误，参考文献不足，需要补充更多临床研究证据",
                         reviewDate: "2025-01-25",
                         reviewer: "钱七"
+                    }
+                ]
+            },
+             "res004": {
+                name: "北豆根化学成分研究进展摘要",
+                status: "approved", 
+                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf", 
+                currentVersion: "v1.1", // Assuming v1.1 is the approved one
+                versions: [
+                     {
+                        version: "v1.1",
+                        date: "2025-03-02", 
+                        editor: "周吴", 
+                        notes: "已审核校对，补充引用",
+                        content: "[[北豆根包含多种生物碱，如生物碱A、B等|refs:s1]]，具有[[潜在的抗肿瘤和抗炎药用价值|refs:s2]]。[[进一步研究集中在其作用机制和临床转化上|refs:s3]]。",
+                        sources: {
+                            "s1": { type: "doc", page: 1, displayText: "进展摘要 第1页 - 化学成分" },
+                            "s2": { type: "doc", page: 2, displayText: "进展摘要 第2页 - 药理活性" },
+                            "s3": { type: "url", link: "https://example.com/beidougen-review", displayText: "北豆根综述文章"}
+                        },
+                        approved: true,
+                        reviewComment: "内容准确，符合要求。",
+                        reviewDate: "2025-03-03",
+                        reviewer: "系统管理员" // Placeholder for reviewer
+                    },
+                    {
+                        version: "v1.0",
+                        date: "2025-03-01", 
+                        editor: "郑王", 
+                        notes: "初稿摘要",
+                        content: "[[北豆根包含多种生物碱|refs:s1]]，初步显示[[药用价值|refs:s2]]。",
+                        sources: {
+                            "s1": { type: "doc", page: 1, displayText: "进展摘要 第1页" },
+                            "s2": { type: "doc", page: 2, displayText: "进展摘要 第2页" }
+                        },
+                        approved: false
+                    }
+                ]
+            },
+            "res005": {
+                name: "巴豆相关毒理学研究数据提取",
+                status: "pending", 
+                originalDocUrl: "https://www.africau.edu/images/default/sample.pdf", 
+                currentVersion: "v1.0",
+                versions: [
+                    {
+                        version: "v1.0",
+                        date: "2025-03-05", 
+                        editor: "褚卫", 
+                        notes: "数据初步提取，待复核",
+                        content: "[[巴豆油的主要毒性成分为巴豆毒素 (phorbol esters)|refs:s1]]。[[小鼠口服LD50数据约为 X mg/kg|refs:s2]]。[[皮肤接触可引起严重刺激反应|refs:s1]]。",
+                        sources: {
+                            "s1": { type: "doc", page: 4, displayText: "毒理学文献 第4页 - 成分与反应" },
+                            "s2": { type: "url", link: "https://example.com/toxnet/croton-ld50", displayText: "ToxNet: Croton Oil LD50 Data" }
+                        },
+                        approved: false
                     }
                 ]
             }
@@ -211,9 +287,8 @@
         let currentResultData = null;
         let displayedVersion = null;
         let isEditMode = false;
-        let isOriginalDocVisible = true;
+        let isOriginalDocVisible = true; 
 
-        // DOM元素引用
         const elements = {
             resultMainTitle: document.getElementById('result-main-title'),
             resultStatusBadge: document.getElementById('result-status-badge'),
@@ -235,15 +310,20 @@
             reviewResultBtn: document.getElementById('review-result-btn'),
             saveChangesBtn: document.getElementById('save-changes-btn'),
             approveResultBtn: document.getElementById('approve-result-btn'),
-            cancelEditBtn: document.getElementById('cancel-edit-btn')
+            cancelEditBtn: document.getElementById('cancel-edit-btn'),
+            toggleSourceListBtn: document.getElementById('toggle-source-list-btn'),
+            sourceListPanel: document.getElementById('source-list-panel'),
+            sourceListCaret: document.getElementById('source-list-caret'),
+            toggleVersionHistoryBtn: document.getElementById('toggle-version-history-btn'),
+            versionHistoryPanel: document.getElementById('version-history-panel'),
+            versionHistoryCaret: document.getElementById('version-history-caret')
         };
 
         // --- 功能函数 ---
         
-        // 复制功能
         function copyResultContent() {
-            const content = displayedVersion.content;
-            navigator.clipboard.writeText(content).then(() => {
+            const contentToCopy = displayedVersion ? displayedVersion.content : elements.resultTextDisplay.textContent;
+            navigator.clipboard.writeText(contentToCopy).then(() => {
                 showToast('结果内容已复制到剪贴板');
             }).catch(err => {
                 console.error('复制失败:', err);
@@ -251,15 +331,20 @@
             });
         }
 
-        // 导出功能
         function exportResult() {
+            if (!displayedVersion) {
+                showToast('无版本信息可导出', 'error');
+                return;
+            }
             const exportData = {
+                id: currentResultId,
                 name: currentResultData.name,
                 version: displayedVersion.version,
                 content: displayedVersion.content,
                 sources: displayedVersion.sources,
                 exportDate: new Date().toISOString(),
-                status: currentResultData.status
+                status: currentResultData.status, // Overall status of the result
+                versionStatus: displayedVersion.approved ? 'approved' : (displayedVersion.reviewComment ? 'rejected' : 'pending')
             };
 
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -274,154 +359,208 @@
             showToast('结果已导出');
         }
 
-        // 进入编辑模式
         function enterEditMode() {
+            if (displayedVersion && displayedVersion.approved) {
+                showToast('此版本已审核通过，无法直接修改或再次审核。', 'info');
+                return;
+            }
             isEditMode = true;
             elements.resultTextDisplay.classList.add('hidden');
             elements.resultTextEdit.classList.remove('hidden');
             elements.editSpecificActions.classList.remove('hidden');
-            elements.resultTextEdit.value = displayedVersion.content;
-            elements.reviewResultBtn.disabled = true;
+            elements.resultTextEdit.value = displayedVersion ? displayedVersion.content : '';
+            elements.revisionNotesInput.value = '';
+            elements.reviewResultBtn.disabled = true; // Disable while in edit mode
+            elements.approveResultBtn.disabled = false; // Enable approve button in edit panel
             showToast('已进入编辑模式');
         }
 
-        // 退出编辑模式
         function exitEditMode() {
             isEditMode = false;
             elements.resultTextDisplay.classList.remove('hidden');
             elements.resultTextEdit.classList.add('hidden');
             elements.editSpecificActions.classList.add('hidden');
-            elements.reviewResultBtn.disabled = false;
-            displayVersionContent(displayedVersion);
+            // Re-evaluate reviewResultBtn state based on displayedVersion
+            if (displayedVersion) {
+                 elements.reviewResultBtn.disabled = displayedVersion.approved;
+            } else {
+                elements.reviewResultBtn.disabled = true; // No version, can't review
+            }
+            displayVersionContent(displayedVersion); // Refresh display
         }
 
-        // 保存修改
         function saveChanges() {
             const newContent = elements.resultTextEdit.value;
-            const revisionNotes = elements.revisionNotesInput.value;
+            const revisionNotes = elements.revisionNotesInput.value.trim();
             
-            // 创建新版本
+            if (!displayedVersion) {
+                showToast('错误：无当前版本信息以保存修改。', 'error');
+                return;
+            }
+
+            // Create new version
+            const versionParts = displayedVersion.version.substring(1).split('.').map(Number);
+            versionParts[versionParts.length -1]++; // Increment minor version
+            const newVersionNumber = `v${versionParts.join('.')}`;
+
             const newVersion = {
-                version: `v${parseFloat(displayedVersion.version.substring(1)) + 0.1}`,
+                version: newVersionNumber,
                 date: new Date().toISOString().split('T')[0],
-                editor: "当前用户", // 实际应用中应该从用户会话获取
-                notes: revisionNotes,
+                editor: "当前用户", 
+                notes: revisionNotes || `基于 ${displayedVersion.version} 修改`,
                 content: newContent,
-                sources: displayedVersion.sources, // 保持原有的sources
-                approved: false
+                sources: JSON.parse(JSON.stringify(displayedVersion.sources || {})), // Deep copy sources
+                approved: false // New versions are not approved by default
             };
 
-            // 更新数据
-            currentResultData.versions.unshift(newVersion);
+            currentResultData.versions.unshift(newVersion); // Add to the beginning (most recent)
             currentResultData.currentVersion = newVersion.version;
-            displayedVersion = newVersion;
-
-            // 更新UI
+            currentResultData.status = 'pending'; // Result status becomes pending due to new unapproved version
+            
+            switchToVersion(newVersion.version); // Switch to display this new version
+            
             exitEditMode();
-            updateVersionHistoryList();
-            showToast('修改已保存');
+            updateUI(); // Update overall UI, including status badge
+            showToast('修改已保存为新版本 ' + newVersion.version);
         }
+        
+        function reviewResultModal(isApproved) {
+            // Prevent review if already approved and trying to approve again, or if no version
+            if (!displayedVersion) {
+                 showToast('没有可审核的版本。', 'error');
+                 return;
+            }
+            if (isApproved && displayedVersion.approved) {
+                showToast('此版本已审核通过。', 'info');
+                return;
+            }
+             if (!isApproved && currentResultData.status === 'rejected' && displayedVersion.version === currentResultData.versions.find(v => v.reviewComment)?.version) {
+                showToast('此版本已审核不通过。', 'info');
+                return;
+            }
 
-        // 审核功能
-        function reviewResult(isApproved) {
-            const reviewDialog = document.createElement('div');
-            reviewDialog.innerHTML = `
-                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
-                        <h3 class="text-lg font-semibold mb-4">审核确认</h3>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">审核说明</label>
-                            <textarea id="review-comment" class="w-full border rounded-md p-2" rows="3"></textarea>
-                        </div>
-                        <div class="flex justify-end space-x-2">
-                            <button class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md" onclick="this.closest('.fixed').remove()">取消</button>
-                            <button class="px-4 py-2 text-sm text-white ${isApproved ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} rounded-md" onclick="submitReview(${isApproved}, this)">确认</button>
-                        </div>
+
+            const dialog = document.createElement('div');
+            dialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[900]'; // High z-index
+            dialog.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl">
+                    <h3 class="text-lg font-semibold mb-4">${isApproved ? '审核通过确认' : '审核不通过确认'}</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="review-comment-modal">审核说明 (${isApproved ? '可选' : '必填'})</label>
+                        <textarea id="review-comment-modal" class="w-full border rounded-md p-2 text-sm" rows="3" placeholder="${isApproved ? '选填审核通过的说明...' : '请填写不通过的原因...'}"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button class="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md" onclick="this.closest('.fixed').remove()">取消</button>
+                        <button id="confirm-review-btn" class="px-4 py-2 text-sm text-white ${isApproved ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} rounded-md">确认</button>
                     </div>
                 </div>
             `;
-            document.body.appendChild(reviewDialog);
+            document.body.appendChild(dialog);
+            dialog.querySelector('#confirm-review-btn').addEventListener('click', () => {
+                const comment = dialog.querySelector('#review-comment-modal').value.trim();
+                if (!isApproved && !comment) {
+                    showToast('审核不通过必须填写说明。', 'error');
+                    dialog.querySelector('#review-comment-modal').focus();
+                    return;
+                }
+                submitReview(isApproved, comment);
+                dialog.remove();
+            });
         }
 
-        // 提交审核结果
-        function submitReview(isApproved, buttonElement) {
-            const dialog = buttonElement.closest('.fixed');
-            const comment = dialog.querySelector('#review-comment').value;
+
+        function submitReview(isApproved, comment) {
+            if (!displayedVersion) {
+                showToast('错误：无当前版本信息。', 'error');
+                return;
+            }
             
             displayedVersion.approved = isApproved;
             displayedVersion.reviewComment = comment;
             displayedVersion.reviewDate = new Date().toISOString().split('T')[0];
-            displayedVersion.reviewer = "当前用户"; // 实际应用中应该从用户会话获取
+            displayedVersion.reviewer = "当前用户"; 
             
             currentResultData.status = isApproved ? 'approved' : 'rejected';
             
-            // 更新UI
-            updateUI();
-            dialog.remove();
-            showToast(`审核${isApproved ? '通过' : '不通过'}已提交`);
+            updateUI(); // Update overall UI including status and version list
+            displayVersionContent(displayedVersion); // Refresh current version display
+            showToast(`版本 ${displayedVersion.version} 审核${isApproved ? '通过' : '不通过'}已提交`);
+            exitEditMode(); // Ensure edit mode is exited
         }
-
-        // 显示提示消息
+        
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white ${
-                type === 'success' ? 'bg-green-600' : 'bg-red-600'
-            } transition-opacity duration-300`;
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white shadow-lg 
+                ${type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600')} 
+                transition-all duration-300 ease-out z-[1000] transform translate-y-10 opacity-0`;
             toast.textContent = message;
             document.body.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            });
             
             setTimeout(() => {
-                toast.style.opacity = '0';
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-10', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // 更新版本历史列表
         function updateVersionHistoryList() {
-            const versions = currentResultData.versions;
-            elements.versionHistoryList.innerHTML = versions.map((ver, index) => `
-                <li class="version-item ${ver.version === displayedVersion.version ? 'active' : ''} p-2 border-l-4 hover:bg-blue-50 cursor-pointer"
+            if (!currentResultData || !currentResultData.versions) {
+                elements.versionHistoryList.innerHTML = '<li class="text-slate-500 italic">无版本历史。</li>';
+                return;
+            }
+            const versions = currentResultData.versions; // Assumes versions are sorted newest first
+            elements.versionHistoryList.innerHTML = versions.map((ver) => `
+                <li class="version-item ${ver.version === displayedVersion.version ? 'active' : ''} p-2.5 border-l-4 ${ver.version === displayedVersion.version ? 'border-blue-500 bg-blue-50' : 'border-transparent'} hover:bg-slate-100 cursor-pointer rounded-r-md"
                     onclick="switchToVersion('${ver.version}')">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="font-medium">${ver.version}</span>
-                            <span class="text-slate-500 ml-2">${ver.date}</span>
+                            <span class="font-semibold text-slate-700">${ver.version}</span>
+                            <span class="text-slate-500 ml-2 text-xs">${ver.date} by ${ver.editor}</span>
                         </div>
                         ${ver.approved !== undefined ? `
-                            <span class="text-xs ${ver.approved ? 'text-green-600' : 'text-red-600'}">
-                                ${ver.approved ? '已通过' : '未通过'}
+                            <span class="text-xs status-badge-lg text-xs px-1.5 py-0.5 ${ver.approved ? 'status-approved' : (ver.reviewComment ? 'status-rejected' : 'status-pending')}">
+                                ${ver.approved ? '已通过' : (ver.reviewComment ? '未通过' : '待审')}
                             </span>
-                        ` : ''}
+                        ` : '<span class="text-xs status-badge-lg status-pending px-1.5 py-0.5">待审</span>'}
                     </div>
-                    <div class="text-slate-600 mt-1">${ver.notes || '无说明'}</div>
+                    <div class="text-slate-600 mt-1 text-xs">${ver.notes || '无修改说明'}</div>
                     ${ver.reviewComment ? `
-                        <div class="text-slate-500 mt-1 text-xs">
-                            审核意见: ${ver.reviewComment}
+                        <div class="text-slate-500 mt-1 text-xs italic">
+                            审核意见 (${ver.reviewDate} by ${ver.reviewer}): ${escapeHtml(ver.reviewComment)}
                         </div>
                     ` : ''}
                 </li>
             `).join('');
         }
 
-        // 切换版本
         function switchToVersion(versionId) {
             const version = currentResultData.versions.find(v => v.version === versionId);
             if (version) {
                 displayedVersion = version;
                 displayVersionContent(version);
-                updateVersionHistoryList();
+                updateVersionHistoryList(); // Re-render to highlight active version
+                 // Update overall status badge if the switched version dictates it (e.g. if it's the latest)
+                if (version.version === currentResultData.currentVersion) {
+                    elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
+                } else { // For older versions, show their specific approval status
+                     elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(version.approved ? 'approved' : (version.reviewComment ? 'rejected' : 'pending'));
+                }
             }
         }
-
-        // 更新UI
+        
         function updateUI() {
+            if (!currentResultData) return;
             elements.resultMainTitle.textContent = `结果详情: ${currentResultData.name}`;
-            elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
-            elements.originalDocIframe.src = currentResultData.originalDocUrl;
+            elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status); // Overall status
+            elements.originalDocIframe.src = currentResultData.originalDocUrl || "about:blank";
             updateVersionHistoryList();
         }
-
-        // 状态徽章生成函数
+        
         function getStatusBadgeHTML(status) {
             const statusMap = {
                 'pending': { class: 'status-pending', text: '待审核' },
@@ -431,19 +570,17 @@
             const statusInfo = statusMap[status] || { class: 'bg-slate-200 text-slate-700', text: status };
             return `<span class="status-badge-lg ${statusInfo.class}">${statusInfo.text}</span>`;
         }
-
-        // HTML转义函数
+        
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return '';
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
         }
 
-        // 解析带引用的内容
         function parseSourcedContentWithRefs(rawContent, sources = {}) {
             const regex = /\[\[(.*?)\|refs:([a-zA-Z0-9_,-]+)\]\]/g;
             let resultHTML = "";
@@ -451,7 +588,8 @@
             const sourceIdToNumberMap = {};
             let currentRefNumber = 1;
 
-            // 首先映射所有引用编号
+            const sourceEntries = Object.entries(sources);
+
             for (const match of rawContent.matchAll(regex)) {
                 const refIds = match[2].trim().split(',');
                 refIds.forEach(refId => {
@@ -461,8 +599,10 @@
                     }
                 });
             }
+            
+            currentRefNumber = 1; // Reset for ordered display in text
+            const displayedNumberedSources = {}; // To ensure tooltip also uses consistent numbering
 
-            // 然后处理文本和引用
             for (const match of rawContent.matchAll(regex)) {
                 const textBefore = rawContent.substring(lastIndex, match.index);
                 const inferredText = match[1].trim();
@@ -473,9 +613,22 @@
 
                 refIds.forEach((refId, idx) => {
                     const cleanedRefId = refId.trim();
-                    const refNum = sourceIdToNumberMap[cleanedRefId];
-                    if (refNum) {
-                        resultHTML += `<sup class="source-ref" data-ref-id="${escapeHtml(cleanedRefId)}">${refNum}</sup>`;
+                    const sourceData = sources[cleanedRefId];
+                    if (sourceData) {
+                        const refNum = sourceIdToNumberMap[cleanedRefId];
+                        displayedNumberedSources[cleanedRefId] = refNum; // Store for tooltip consistency
+                        
+                        let tooltipHTML = `<strong>源 #${refNum}: ${escapeHtml(sourceData.displayText || 'N/A')}</strong>`;
+                        if (sourceData.type === 'url' && sourceData.link) {
+                            tooltipHTML += `<a href="${escapeHtml(sourceData.link)}" target="_blank" rel="noopener noreferrer">访问链接</a>`;
+                        } else if (sourceData.type === 'doc') {
+                            tooltipHTML += `<span>文档内引用 (页 ${sourceData.page || 'N/A'})</span>`;
+                        }
+                        if (sourceData.docSnippet) {
+                             tooltipHTML += `<span class="source-text-snippet">${escapeHtml(sourceData.docSnippet)}</span>`;
+                        }
+
+                        resultHTML += `<sup class="source-ref" tabindex="0" data-ref-id="${escapeHtml(cleanedRefId)}">${refNum}<span class="ref-tooltip">${tooltipHTML}</span></sup>`;
                         if (idx < refIds.length - 1) resultHTML += ',';
                     }
                 });
@@ -484,58 +637,83 @@
             }
             
             resultHTML += escapeHtml(rawContent.substring(lastIndex));
-            return { html: resultHTML, numberedSources: sourceIdToNumberMap };
+            return { html: resultHTML, numberedSources: displayedNumberedSources };
         }
 
-        // 显示版本内容
         function displayVersionContent(versionObj) {
-            if (!versionObj) return;
+            if (!versionObj) {
+                elements.resultTextDisplay.innerHTML = '<p class="text-slate-500 italic">请选择一个版本查看。</p>';
+                elements.resultVersionInfo.textContent = '版本: - | 更新: -';
+                elements.reviewResultBtn.disabled = true;
+                elements.reviewResultBtn.title = "无版本可审核";
+                elements.reviewResultBtn.classList.add('cursor-not-allowed', 'opacity-70');
+                updateSourceList({}, {});
+                return;
+            }
             
             const { html, numberedSources } = parseSourcedContentWithRefs(versionObj.content || "", versionObj.sources || {});
             
-            elements.resultTextDisplay.innerHTML = html;
+            elements.resultTextDisplay.innerHTML = html || '<p class="text-slate-500 italic">此版本无内容。</p>';
             elements.resultVersionInfo.textContent = `版本: ${versionObj.version} | 更新: ${versionObj.date} by ${versionObj.editor}`;
             
             if (versionObj.notes) {
-                elements.resultVersionInfo.textContent += ` | 说明: ${versionObj.notes}`;
+                elements.resultVersionInfo.textContent += ` | 说明: ${escapeHtml(versionObj.notes)}`;
             }
             
             if (versionObj.reviewComment) {
-                elements.resultVersionInfo.textContent += ` | 审核意见: ${versionObj.reviewComment}`;
+                elements.resultVersionInfo.textContent += ` | 审核意见 (${versionObj.reviewDate} by ${versionObj.reviewer}): ${escapeHtml(versionObj.reviewComment)}`;
             }
 
-            // 更新源列表
             updateSourceList(versionObj.sources || {}, numberedSources);
-            
-            // 添加源引用事件监听
             attachSourceRefListeners();
+
+            // Disable "审核" button if current version is approved
+            if (versionObj.approved) {
+                elements.reviewResultBtn.disabled = true;
+                elements.reviewResultBtn.title = "此版本已审核通过。";
+                elements.reviewResultBtn.classList.add('cursor-not-allowed', 'opacity-70');
+            } else {
+                elements.reviewResultBtn.disabled = false;
+                elements.reviewResultBtn.title = "审核结果";
+                elements.reviewResultBtn.classList.remove('cursor-not-allowed', 'opacity-70');
+            }
+             // Set main status badge based on the displayed version if it's not the absolute latest overall status
+            if (versionObj.version !== currentResultData.currentVersion || currentResultData.status === 'pending') {
+                 elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(versionObj.approved ? 'approved' : (versionObj.reviewComment ? 'rejected' : 'pending'));
+            } else {
+                 elements.resultStatusBadge.innerHTML = getStatusBadgeHTML(currentResultData.status);
+            }
+
         }
 
-        // 更新源列表
         function updateSourceList(sources, numberedSources) {
             elements.sourceListUL.innerHTML = '';
-            
-            if (Object.keys(sources).length === 0) {
-                elements.sourceListUL.innerHTML = '<li class="text-slate-400 italic">暂无来源信息</li>';
+            if (Object.keys(sources).length === 0 || Object.keys(numberedSources).length === 0) {
+                elements.sourceListUL.innerHTML = '<li class="text-slate-400 italic p-2">暂无来源信息。</li>';
                 return;
             }
 
-            const sortedSources = Object.entries(sources)
-                .sort(([idA, _A], [idB, _B]) => (numberedSources[idA] || 0) - (numberedSources[idB] || 0));
+            const sortedSourceEntries = Object.entries(sources)
+                .filter(([id, _source]) => numberedSources[id] !== undefined) // Only include sources that are actually referenced and numbered
+                .sort(([idA, _A], [idB, _B]) => numberedSources[idA] - numberedSources[idB]);
 
-            sortedSources.forEach(([id, source]) => {
+            sortedSourceEntries.forEach(([id, source]) => {
                 const refNum = numberedSources[id];
-                if (!refNum) return;
-
                 const li = document.createElement('li');
-                li.className = 'source-list-item p-2 hover:bg-slate-100 rounded cursor-pointer';
+                li.className = 'source-list-item p-2 hover:bg-slate-100 rounded cursor-pointer border-b border-slate-100 last:border-b-0';
                 li.innerHTML = `
                     <div class="flex items-start">
-                        <span class="font-medium mr-2">[${refNum}]</span>
+                        <span class="font-semibold mr-2 text-blue-600">[${refNum}]</span>
                         <div class="flex-1">
-                            <div class="text-slate-700">${escapeHtml(source.displayText || '')}</div>
+                            <div class="text-slate-700 font-medium">${escapeHtml(source.displayText || '未知来源')}</div>
                             ${source.docSnippet ? `
-                                <div class="text-slate-500 text-xs mt-1">${escapeHtml(source.docSnippet)}</div>
+                                <div class="text-slate-500 text-xs mt-0.5 italic">“${escapeHtml(source.docSnippet)}”</div>
+                            ` : ''}
+                            ${source.type === 'url' && source.link ? `
+                                <a href="${escapeHtml(source.link)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 text-xs underline break-all">${escapeHtml(source.link)}</a>
+                            ` : ''}
+                             ${source.type === 'doc' && source.page ? `
+                                <span class="text-xs text-slate-500">(文档第 ${source.page} 页)</span>
                             ` : ''}
                         </div>
                     </div>
@@ -543,68 +721,158 @@
                 li.addEventListener('click', () => handleSourceClick(source));
                 elements.sourceListUL.appendChild(li);
             });
-        }
-
-        // 处理源点击
-        function handleSourceClick(source) {
-            if (!source) return;
-
-            if (source.type === 'doc') {
-                // 处理文档内源引用
-                if (source.page) {
-                    // 在实际应用中，这里应该调用PDF查看器的API跳转到指定页面
-                    console.log(`跳转到第 ${source.page} 页`);
-                }
-                if (source.rect) {
-                    // 在实际应用中，这里应该高亮显示指定区域
-                    console.log(`高亮区域: ${source.rect}`);
-                }
-            } else if (source.type === 'url') {
-                // 处理URL类型的源
-                if (source.link) {
-                    window.open(source.link, '_blank');
-                }
+             if (elements.sourceListUL.children.length === 0) {
+                 elements.sourceListUL.innerHTML = '<li class="text-slate-400 italic p-2">暂无来源信息或未被引用。</li>';
             }
         }
 
-        // 添加源引用事件监听
+        function handleSourceClick(source) {
+            if (!source) return;
+            if (!isOriginalDocVisible) { // If doc pane is hidden, show it
+                toggleOriginalDocPane();
+            }
+            showToast(`处理来源: ${source.displayText}`, 'info');
+            if (source.type === 'doc') {
+                if (source.page) {
+                    console.log(`跳转到PDF第 ${source.page} 页`);
+                    // Placeholder: actual PDF viewer API call needed
+                    elements.originalDocIframe.contentWindow.postMessage({ type: 'SCROLL_TO_PAGE', page: source.page }, '*');
+
+                }
+                if (source.rect) {
+                    console.log(`高亮PDF区域: ${source.rect}`);
+                     elements.originalDocIframe.contentWindow.postMessage({ type: 'HIGHLIGHT_RECT', page: source.page, rect: source.rect.split(',') }, '*');
+                }
+            } else if (source.type === 'url' && source.link) {
+                window.open(source.link, '_blank');
+            }
+        }
+
         function attachSourceRefListeners() {
             document.querySelectorAll('.source-ref').forEach(ref => {
-                ref.addEventListener('click', (e) => {
-                    const refId = e.target.dataset.refId;
+                // Remove old listeners if any (simple way)
+                const newRef = ref.cloneNode(true);
+                ref.parentNode.replaceChild(newRef, ref);
+
+                newRef.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent body click from hiding tooltip immediately
+                    const refId = e.currentTarget.dataset.refId;
                     const source = displayedVersion.sources[refId];
                     if (source) {
                         handleSourceClick(source);
                     }
                 });
+                 newRef.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const refId = e.currentTarget.dataset.refId;
+                        const source = displayedVersion.sources[refId];
+                        if (source) {
+                            handleSourceClick(source);
+                        }
+                    }
+                });
             });
         }
+        
+        function toggleOriginalDocPane() {
+            isOriginalDocVisible = !isOriginalDocVisible;
+            const iconElement = elements.toggleOriginalDocBtn.querySelector('i');
 
-        // --- 事件监听器 ---
+            if (isOriginalDocVisible) { // SHOW the document pane
+                elements.rightPane.classList.remove('md:w-0', 'w-0', 'opacity-0', 'pointer-events-none');
+                elements.rightPane.classList.add('md:w-1/2', 'w-full');
+                elements.leftPane.classList.replace('md:w-full', 'md:w-1/2');
+                elements.toggleDocText.textContent = '隐藏原文';
+                if (iconElement) {
+                    iconElement.classList.remove('fa-eye');
+                    iconElement.classList.add('fa-eye-slash');
+                }
+            } else { // HIDE the document pane
+                elements.rightPane.classList.replace('md:w-1/2', 'md:w-0');
+                elements.rightPane.classList.replace('w-full', 'w-0');
+                elements.rightPane.classList.add('opacity-0', 'pointer-events-none');
+                elements.leftPane.classList.replace('md:w-1/2', 'md:w-full');
+                elements.toggleDocText.textContent = '显示原文';
+                if (iconElement) {
+                    iconElement.classList.remove('fa-eye-slash');
+                    iconElement.classList.add('fa-eye');
+                }
+            }
+        }
+
+        // --- Event Listeners ---
         elements.copyResultBtn.addEventListener('click', copyResultContent);
         elements.exportResultBtn.addEventListener('click', exportResult);
         elements.reviewResultBtn.addEventListener('click', () => enterEditMode());
+        
         elements.saveChangesBtn.addEventListener('click', saveChanges);
         elements.cancelEditBtn.addEventListener('click', exitEditMode);
-        elements.approveResultBtn.addEventListener('click', () => reviewResult(true));
+        elements.approveResultBtn.addEventListener('click', () => reviewResultModal(true)); // This is in edit panel, so it should trigger modal
 
-        // 初始化
+        elements.toggleOriginalDocBtn.addEventListener('click', toggleOriginalDocPane);
+
+        function setupCollapsiblePanel(toggleBtn, panel, caretIcon) {
+            const isCollapsed = panel.classList.contains('collapsed');
+            caretIcon.classList.toggle('fa-chevron-up', isCollapsed);
+            caretIcon.classList.toggle('fa-chevron-down', !isCollapsed);
+
+            toggleBtn.addEventListener('click', () => {
+                const currentlyCollapsed = panel.classList.toggle('collapsed');
+                caretIcon.classList.toggle('fa-chevron-up', currentlyCollapsed);
+                caretIcon.classList.toggle('fa-chevron-down', !currentlyCollapsed);
+            });
+        }
+        
+        if (elements.toggleSourceListBtn) {
+            setupCollapsiblePanel(elements.toggleSourceListBtn, elements.sourceListPanel, elements.sourceListCaret);
+        }
+        if (elements.toggleVersionHistoryBtn) {
+            setupCollapsiblePanel(elements.toggleVersionHistoryBtn, elements.versionHistoryPanel, elements.versionHistoryCaret);
+        }
+        
+        // Global click listener to hide tooltips if clicked outside
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.source-ref .ref-tooltip').forEach(tooltip => {
+                if (!tooltip.parentElement.contains(e.target)) {
+                    // Simple hide, hover/focus will reshow. For robust accessible tooltips, more state management is needed.
+                }
+            });
+        });
+
+
+        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            // 从URL获取结果ID
             const urlParams = new URLSearchParams(window.location.search);
-            const resultId = urlParams.get('id');
+            const resultIdParam = urlParams.get('id');
             
-            if (resultId && mockResultDetailsStore[resultId]) {
-                currentResultId = resultId;
-                currentResultData = mockResultDetailsStore[resultId];
-                displayedVersion = currentResultData.versions[0];
-                updateUI();
-                displayVersionContent(displayedVersion);
+            if (resultIdParam && mockResultDetailsStore[resultIdParam]) {
+                currentResultId = resultIdParam;
+                currentResultData = JSON.parse(JSON.stringify(mockResultDetailsStore[currentResultId])); // Deep copy for mutable store
+                
+                // Find the version specified by currentVersion or default to the first one
+                let versionToDisplay = currentResultData.versions.find(v => v.version === currentResultData.currentVersion);
+                if (!versionToDisplay && currentResultData.versions.length > 0) {
+                    versionToDisplay = currentResultData.versions[0]; // Default to most recent if currentVersion is invalid
+                    currentResultData.currentVersion = versionToDisplay.version;
+                }
+                displayedVersion = versionToDisplay;
+
+                updateUI(); // Sets title, overall status, iframe, version history
+                if (displayedVersion) {
+                    displayVersionContent(displayedVersion); // Sets content, version-specific info, source list, review button state
+                } else {
+                     elements.resultTextDisplay.innerHTML = '<div class="text-orange-500 p-4">警告：未找到指定的当前版本数据。</div>';
+                     displayVersionContent(null); // Handle case with no valid version
+                }
+
             } else {
-                // 默认加载或错误处理
-                elements.resultMainTitle.textContent = `结果详情: ${resultId ? '无效ID' : '未指定ID'}`;
+                elements.resultMainTitle.textContent = `结果详情: ${resultIdParam ? '无效ID ('+resultIdParam+')' : '未指定ID'}`;
                 elements.resultStatusBadge.innerHTML = getStatusBadgeHTML('error');
-                elements.resultTextDisplay.innerHTML = '<div class="text-red-500">未找到结果数据，请检查ID是否正确</div>';
+                elements.resultTextDisplay.innerHTML = `<div class="text-red-500 p-4">错误：未找到结果数据。请检查ID (${escapeHtml(resultIdParam || 'N/A')}) 是否正确或数据是否存在。</div>`;
+                displayVersionContent(null); // Ensure UI is cleared or shows "no data" state
+                elements.headerActionsButtons.querySelectorAll('button').forEach(btn => btn.disabled = true); // Disable all actions
             }
         });
     </script>
