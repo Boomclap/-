@@ -1,0 +1,99 @@
+@startuml
+
+skinparam rectangle {
+    BorderColor #555555
+    BackgroundColor #EEEEEE
+    ArrowColor #555555
+}
+skinparam actor {
+    BorderColor #555555
+    BackgroundColor #EEEEEE
+    ArrowColor #555555
+}
+skinparam node {
+    BorderColor #555555
+    BackgroundColor #FFFFFF
+    ArrowColor #555555
+}
+skinparam database {
+    BorderColor #555555
+    BackgroundColor #FFFFFF
+    ArrowColor #555555
+}
+
+skinparam stereotype {
+    CBackgroundColor #f66
+    NBackgroundColor #f9f
+    AgaBackgroundColor #ccf
+    DbMasterBackgroundColor #FFD700
+    DbReplicaBackgroundColor #E6E6FA
+}
+
+actor "User A" as User1
+actor "User B" as User2
+
+node "Route 53 / GeoDNS\n(Latency & Failover Routing)" as GeoDNS <<N>>
+
+frame "云平台区域 (Cloud Region)" {
+    package "可用区 A (Availability Zone A)" {
+        rectangle "API Gateway\n- Auth\n- Rate Limiting\n- Routing" as APG_A <<Aga>>
+        rectangle "Application Load Balancer" as LB_A
+
+        package "后端服务 A" {
+            rectangle "Service Registry\n(e.g., Eureka, Consul)" as SR_A
+            rectangle "Message Queue\n(e.g., SQS, RabbitMQ)" as MQ_A
+            rectangle "Worker Service\n(Async Consumer)" as Worker_A
+
+            package "服务A: Auto Scaling Group" {
+                rectangle "Instance 1" as Service_A1
+                rectangle "Instance 2" as Service_A2
+            }
+            package "服务B: Auto Scaling Group" {
+                rectangle "Circuit Breaker" as CB_A <<C>>
+                rectangle "Instance 1" as Service_B
+            }
+            database "Distributed Cache\n(e.g., Redis)" as Cache_A
+        }
+        database "Primary Database\n(Master)" as DB_Master <<DbMaster>>
+    }
+
+    package "可用区 B (Availability Zone B)" {
+        rectangle "API Gateway" as APG_B <<Aga>>
+        rectangle "Application Load Balancer" as LB_B
+        package "后端服务 B" {
+            package "服务A: Auto Scaling Group" {
+                rectangle "Instance 3" as Service_A3
+            }
+            package "服务B: Auto Scaling Group" {
+                rectangle "Instance 2" as Service_B2
+            }
+            database "Distributed Cache" as Cache_B
+        }
+        database "Replica Database\n(Slave/Standby)" as DB_Replica <<DbReplica>>
+    }
+}
+
+' --- Connections ---
+User1 --> GeoDNS
+User2 --> GeoDNS
+GeoDNS --> APG_A : Route to AZ A (Primary)
+GeoDNS ..> APG_B : <color:red>Failover to AZ B
+
+APG_A --> LB_A
+LB_A --> Service_A1
+LB_A --> Service_B
+Service_B --[#red]> CB_A : Failure Signal
+CB_A --[#red]> LB_A : Open/Close State
+
+Service_A1 .> SR_A : Register/Discover
+Service_B .> SR_A : Register/Discover
+
+APG_A --> MQ_A : Push Job
+MQ_A ..> Worker_A : Consume Message
+
+DB_Master -> DB_Replica : Replication
+
+APG_B --> LB_B
+LB_B --> Service_A3
+LB_B --> Service_B2
+@enduml

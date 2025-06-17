@@ -1,0 +1,163 @@
+@startuml
+title 药材信息获取流程 (改进版)
+
+!theme vibrant
+' skinparam handwritten true ' 可选，手绘风格
+skinparam defaultTextAlignment center
+skinparam activity {
+    ArrowColor Black
+    BorderColor #006400 ' 深绿色边框
+    BackgroundColor #90EE90 ' 浅绿色背景
+    FontName "SimSun" ' 或者其他支持中文的字体
+    FontColor Black
+}
+skinparam ellipse { ' 用于主要数据源 "文献"
+    BorderColor #8A2BE2 ' 紫色边框 (类似原图)
+    BackgroundColor #E6E6FA ' 淡紫色背景 (类似原图)
+    FontName "SimSun"
+    FontColor Black
+}
+skinparam cloud { ' 用于外部数据库 "植物智" 和 "中国药典"
+    BorderColor #4682B4 ' 钢蓝色
+    BackgroundColor #ADD8E6 ' 淡蓝色
+    FontName "SimSun"
+    FontColor Black
+}
+skinparam note {
+    BackgroundColor LightYellow
+    FontName "SimSun"
+}
+skinparam arrow {
+    Color Black
+    Thickness 1.5
+}
+
+
+start
+
+ellipse "文献" as LiteratureSource
+
+:从文献提取[药材中文名];
+LiteratureSource -> "从文献提取[药材中文名]"
+
+note on link
+  输入: 文献原文
+  输出: 药材中文名 (Key)
+end note
+
+:获取拉丁名流程;
+"从文献提取[药材中文名]" --> 获取拉丁名流程
+
+cloud "中国药典" as PharmacopoeiaDB
+cloud "植物智" as FloraDB
+
+获取拉丁名流程 --> PharmacopoeiaDB
+note on link: 查询[药材中文名]的拉丁名
+end note
+
+if (中国药典中有拉丁名?) then (是)
+  :拉丁名 (来自中国药典);
+  PharmacopoeiaDB -> "拉丁名 (来自中国药典)"
+else (否)
+  获取拉丁名流程 --> FloraDB
+  note on link: 查询[药材中文名]的拉丁名
+  end note
+  if (植物智中有拉丁名?) then (是)
+    :拉丁名 (来自植物智);
+    FloraDB -> "拉丁名 (来自植物智)"
+  else (否)
+    :拉丁名 (来自文献);
+    LiteratureSource -> "拉丁名 (来自文献)"
+    note on link
+      输入: 药材中文名
+      (或直接从文献初步提取时获得)
+    end note
+  endif
+endif
+
+
+:获取药用部位流程;
+"从文献提取[药材中文名]" --> 获取药用部位流程
+
+获取药用部位流程 --> PharmacopoeiaDB
+note on link: 查询[药材中文名]的药用部位
+end note
+
+if (中国药典中有药用部位?) then (是)
+  :药用部位 (来自中国药典);
+  PharmacopoeiaDB -> "药用部位 (来自中国药典)"
+else (否)
+  :药用部位 (来自文献);
+  LiteratureSource -> "药用部位 (来自文献)"
+  note on link
+    输入: 药材中文名
+    (或直接从文献初步提取时获得)
+  end note
+endif
+
+
+' --- 其他直接从文献获取的信息 ---
+group 文献直接提供
+  :主要化学成分;
+  LiteratureSource -> 主要化学成分
+  :主要药理作用;
+  LiteratureSource -> 主要药理作用
+  :主要活性成分;
+  LiteratureSource -> 主要活性成分
+end group
+
+
+' --- 其他直接从中国药典获取的信息 ---
+group 中国药典直接提供 (基于药材中文名查询)
+  :来源;
+  PharmacopoeiaDB <-left- "从文献提取[药材中文名]" ' 显示药典查询也需要中文名
+  PharmacopoeiaDB -> 来源
+  :拼音;
+  PharmacopoeiaDB -> 拼音
+  :药材介绍;
+  PharmacopoeiaDB -> 药材介绍
+  :药典含量;
+  PharmacopoeiaDB -> 药典含量
+  :传统药效;
+  PharmacopoeiaDB -> 传统药效
+end group
+
+' 将所有最终确定的字段汇集 (概念上)
+' PlantUML 中，如果这些是最终输出，它们可以独立存在或流向一个结束点
+' 如果要明确表示它们都属于一个最终的 "药材信息记录"，可以添加一个汇聚活动
+
+:"最终药材信息记录";
+note right
+  包含:
+  - 药材中文名
+  - 最终确定的拉丁名
+  - 最终确定的药用部位
+  - 主要化学成分
+  - 主要药理作用
+  - 主要活性成分
+  - 来源 (药典)
+  - 拼音 (药典)
+  - 药材介绍 (药典)
+  - 药典含量 (药典)
+  - 传统药效 (药典)
+end note
+
+"拉丁名 (来自中国药典)" ----> "最终药材信息记录"
+"拉丁名 (来自植物智)" ----> "最终药材信息记录"
+"拉丁名 (来自文献)" ----> "最终药材信息记录"
+"药用部位 (来自中国药典)" ----> "最终药材信息记录"
+"药用部位 (来自文献)" ----> "最终药材信息记录"
+"主要化学成分" ----> "最终药材信息记录"
+"主要药理作用" ----> "最终药材信息记录"
+"主要活性成分" ----> "最终药材信息记录"
+"来源" ----> "最终药材信息记录"
+"拼音" ----> "最终药材信息记录"
+"药材介绍" ----> "最终药材信息记录"
+"药典含量" ----> "最终药材信息记录"
+"传统药效" ----> "最终药材信息记录"
+"从文献提取[药材中文名]" ---> "最终药材信息记录"
+
+
+stop
+
+@enduml

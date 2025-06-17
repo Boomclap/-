@@ -1,0 +1,181 @@
+@startuml 
+
+enum UploadStatus as "上传状态" {
+    NOT_STARTED("未开始")
+    PROCESSING("处理中")
+    COMPLETED("已完成")
+    ERROR("错误")
+}
+
+class Literature as "文献(Literature)"{
+    --描述--
+    用户上传文献
+    --属性--
+	ObjectID 文献id（_id）#r/u
+    String 文献名（name）# 默认文件名
+	String pdf地址（attachUrl）
+	LiteratureLabel 文献标签（LiteratureLabel）
+	Category 文献实体分类（category）
+    UploadStatus 上传状态（uploadStatus）# 文献上传状态
+    String 标题（title）
+    String 作者（author）
+    String 来源（source）
+    String 类型（type）
+    String 影响因子（impactFactor）
+    String 标签（label）
+    String 年份（year）
+    String 期号（issue）
+    String 关键词（keywords）
+    String 摘要（abstract）
+    String 起始页（startPage）
+    String 结束页（endPage）
+    String DOI（doi）
+    String 附件（attachedFile）
+    String 链接（link）
+    String 卷号（volume）
+	----
+    Date 创建日期 (createdAt) #该条记录的创建日期
+    String 创建人 (createdBy) #该条记录的创建人
+    Date 更新日期 (updatedAt) #该记录的更新日期
+    String 更新人 (updatedBy) #该记录更新人
+	--操作--
+	添加（add）（）
+	删除（delete）（）
+	批量上传（batchUpload）
+}
+class Category as "文献实体分类(Category)"{
+	--描述--
+    自定义文献所属文件夹，如：属于疾病药靶文献下的IBD的文献
+    --属性--
+	ObjectID 分类id（_id）#r/u
+    String 分类名（name）# 如：白芍、疾病药靶文献等
+	String 父分类id（pid）
+	--操作--
+	添加文件夹（add）（）
+	删除文件夹（delete）（）
+	修改文件夹（update）（）
+	移动文件夹
+}
+Class LiteratureLabel as "文献标签（LiteratureLabel）"{
+	--描述--
+    综述文献
+	主成分及药理作用
+	指纹图谱和定量
+	质谱鉴定
+	分离纯化
+	……
+    --属性--
+	ObjectID 类型id（_id）#r/u
+    String 类型名（name）# /u
+	--操作--
+	添加（add）# 类型名唯一
+	查看
+	更新
+}
+package ResearchProcess as "调研过程"{
+
+class Research as "调研(Research)"{
+    --描述--
+    
+    --属性--
+	<ref> List<ObjectID> 文献id（literatureID）
+	<ref> ObjectID 使用的流程（process）
+	ObjectID id（_id）#r/u
+	--操作--
+	发送（）
+	重复生成（）：使用同样的提示词和模型，生成不同的回答
+}
+class Analysis as "解析（Analysis）" {
+	<ref> ObjectID 调研id（researchID）
+	ObjectID 解析id（_id）#r/u
+	String 使用的提示词（prompt）
+	String 使用的模型（model）
+}
+class Process as "流程(Process)"{
+    --描述--
+    编排的流程
+}
+class LMM as "模型(LMM)"{
+
+}
+class Prompt as "提示词（Prompt）"{
+    --描述--
+    提示词模板，支持版本管理
+    --属性--
+    ObjectID 提示词id（_id）#r/u
+    String 标题（title）
+    String 提示词内容（content）
+    String 描述（description）
+    --操作--
+    添加（add）
+    删除（delete）
+    编辑（edit）
+}
+class Answer as "回答(Answer)"{
+	--描述--
+    调研产生多个回答
+	--属性--
+	<ref> ObjectID 解析id（analysisID）
+	ObjectID 回答id（_id）
+	String 解析的内容（content）
+	--操作--
+	复制
+	保存（）
+	导出（）#第一期支持以markdown格式导出
+}
+}
+Class Result as "结果（Result）"{
+	--描述--
+	调研过程中会产生多个答复，
+	可以选择一个答复存为结果，用于后续的审核
+	--属性--
+	<ref> ObjectID 调研id（researchID）
+    <ref> ObjectID 解析id（analysisID）
+	ObjectID 结果id（_id）#r/u
+    String 名称（name）# 默认生成"文件分类+文献类型+'调研'"，
+	如：药材白芍主成分及药理作用调研，也支持用户手动编辑
+	String 文献标签（literatureLabel）#文献标签决定
+	String 解析结果（content）# 以markdown格式输出
+	String 使用的提示词（prompt）
+	String 使用的模型（model）
+	String 使用的流程（process）
+	Status 状态（status）# 待审核，审核通过，审核不通过
+	String 审核人（approver）
+	----
+    Date 创建日期 (createdAt) #该条记录的创建日期
+    String 创建人 (createdBy) #该条记录的创建人
+    Date 更新日期 (updatedAt) #该记录的更新日期
+    String 更新人 (updatedBy) #该记录更新人
+	--操作--
+	审核
+	导出
+}
+
+class Version as "版本(Version)"{
+	版本控制
+	--
+	Integer 版本 (version) #r/u, 1 
+	<<ref>> Integer 父版本 (parentVer)
+	--
+	String 更新者 (updatedBy)
+	Date 更新日期 (updatedAt)
+}
+
+
+Literature ->Category:属于
+Literature --> Research:1.*
+LiteratureLabel <- Literature:属于
+Category <. Category:1.*
+Research *-> Process:1.1
+Answer -> Result:保存为
+LiteratureLabel o--> "*" Version
+Research "1" o-- "*" Analysis : 执行 >
+Analysis -> "1" Prompt : 使用
+Analysis -> "1" LMM : 使用
+Analysis "1" --> "*" Answer : 重复执行 >
+Prompt "*" <--> "*" LiteratureLabel : 关联
+Prompt o--> "*" Version : 版本管理
+Literature --> UploadStatus : 状态
+
+
+@enduml

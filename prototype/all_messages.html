@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>所有消息 - 文献纵横</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom scrollbar for webkit browsers */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        .tab-active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-6 max-w-5xl">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <!-- 页面标题 -->
+            <div class="p-4 border-b border-gray-200">
+                <h1 class="text-xl font-semibold text-gray-800">消息中心</h1>
+            </div>
+            
+            <!-- 消息筛选标签 -->
+            <div class="flex border-b border-gray-200">
+                <button class="px-4 py-3 text-sm font-medium tab-active border-b-2 border-blue-500">全部消息</button>
+                <button class="px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900">未读消息</button>
+                <button class="px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900">系统通知</button>
+                <button class="px-4 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900">错误警告</button>
+            </div>
+            
+            <!-- 操作工具栏 -->
+            <div class="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+                <div class="flex space-x-2 items-center">
+                    <div class="flex items-center mr-2">
+                        <input type="checkbox" id="select-all" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                        <label for="select-all" class="text-sm text-gray-600 ml-1">全选</label>
+                    </div>
+                    <button id="mark-all-read-btn" class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">全部标为已读</button>
+                    <button id="delete-selected-btn" class="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-600 rounded hover:bg-gray-50">删除选中</button>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-500">共24条消息，3条未读</span>
+                </div>
+            </div>
+            
+            <!-- 消息列表 -->
+            <div class="divide-y divide-gray-100 custom-scrollbar max-h-[calc(100vh-220px)] overflow-y-auto">
+                <!-- 未读消息 -->
+                <div class="p-4 hover:bg-gray-50 bg-blue-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">白芍相关文献对齐入库成功</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-12 10:00:00</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-blue-600 hover:text-blue-800">标记已读</button>
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            成功导入白芍相关文献15篇，现可在"药材 > 白芍"目录下查看。推荐查看《白芍药理作用研究进展》文献，其中包含最新研究数据。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 未读消息 -->
+                <div class="p-4 hover:bg-gray-50 bg-blue-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-times-circle text-red-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">IBD文献解析失败，格式错误</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-11 16:45:23</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-blue-600 hover:text-blue-800">标记已读</button>
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            文件"IBD最新研究进展.pdf"解析失败，原因：PDF文件格式错误或文件已损坏。请检查文件完整性后重新上传，或转换为标准PDF格式后再试。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 未读消息 -->
+                <div class="p-4 hover:bg-gray-50 bg-blue-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">系统更新完成，新增批量导入功能</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-10 08:30:15</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-blue-600 hover:text-blue-800">标记已读</button>
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            系统已更新至v2.1.0版本，新增批量导入功能，支持一次性导入多篇文献。此外，还优化了文献解析算法，提高了解析速度和准确率。点击查看<a href="#" class="text-blue-600 hover:underline">更新详情</a>。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 已读消息 -->
+                <div class="p-4 hover:bg-gray-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">存储空间不足警告</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-09 14:22:37</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            您的存储空间剩余不足10%，建议清理无用文件或升级存储空间。点击<a href="#" class="text-blue-600 hover:underline">管理存储空间</a>。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 已读消息 -->
+                <div class="p-4 hover:bg-gray-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">药材文献包批量导入完成</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-08 11:15:42</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            药材文献包.zip 批量导入完成，共导入52篇文献，已按照药材类别自动分类存放。您可以在相应的药材文件夹中查看这些文献。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 更多已读消息... -->
+                <div class="p-4 hover:bg-gray-50 flex">
+                    <div class="mr-3 pt-0.5">
+                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-start mb-1">
+                            <div class="flex-shrink-0 mr-2">
+                                <i class="fas fa-sync-alt text-purple-500 mt-0.5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-gray-800">知识库更新完成</p>
+                                <p class="text-xs text-gray-500 mt-1">2023-05-05 09:30:18</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-sm text-gray-500 hover:text-gray-700">删除</button>
+                            </div>
+                        </div>
+                        <div class="ml-6 pl-1 mt-2 text-sm text-gray-600 border-l-2 border-gray-200 pl-3">
+                            系统知识库已完成更新，新增药材信息28条，疾病信息15条，新增关联关系103条。
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="p-4 border-t border-gray-200 flex justify-between items-center">
+                <div>
+                    <span class="text-sm text-gray-500">显示 1-6 / 24</span>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="page-btn px-3 py-1 border border-gray-300 rounded text-gray-600 bg-white hover:bg-gray-50 text-sm" data-page="prev" disabled>上一页</button>
+                    <button class="page-btn px-3 py-1 border border-blue-500 rounded text-white bg-blue-500 hover:bg-blue-600 text-sm" data-page="1">1</button>
+                    <button class="page-btn px-3 py-1 border border-gray-300 rounded text-gray-600 bg-white hover:bg-gray-50 text-sm" data-page="2">2</button>
+                    <button class="page-btn px-3 py-1 border border-gray-300 rounded text-gray-600 bg-white hover:bg-gray-50 text-sm" data-page="3">3</button>
+                    <button class="page-btn px-3 py-1 border border-gray-300 rounded text-gray-600 bg-white hover:bg-gray-50 text-sm" data-page="4">4</button>
+                    <button class="page-btn px-3 py-1 border border-gray-300 rounded text-gray-600 bg-white hover:bg-gray-50 text-sm" data-page="next">下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量定义
+        let currentPage = 1;
+        const messagesPerPage = 6;
+        
+        // 页面初始化函数
+        function initPage() {
+            console.log('初始化页面'); // 调试信息
+            // 为每个消息复选框添加change事件
+            setupCheckboxListeners();
+            // 更新消息计数
+            updateUnreadCount();
+            updateMessageCount();
+            // 分页初始化
+            paginate();
+        }
+        
+        // 消息筛选函数
+        function filterMessages(tabName) {
+            const allMessages = document.querySelectorAll('.divide-y > div.flex');
+            
+            allMessages.forEach(message => {
+                const iconType = message.querySelector('i').className;
+                const isUnread = message.classList.contains('bg-blue-50');
+                
+                // 先移除隐藏类，以便正确计算可见消息
+                message.classList.remove('hidden-by-filter');
+                
+                // 根据标签筛选
+                if (tabName === '全部消息') {
+                    // 不做任何操作，显示所有消息
+                } 
+                else if (tabName === '未读消息' && !isUnread) {
+                    message.classList.add('hidden-by-filter');
+                } 
+                else if (tabName === '系统通知' && !iconType.includes('fa-info-circle')) {
+                    message.classList.add('hidden-by-filter');
+                } 
+                else if (tabName === '错误警告' && !(iconType.includes('fa-times-circle') || iconType.includes('fa-exclamation-triangle'))) {
+                    message.classList.add('hidden-by-filter');
+                }
+            });
+            
+            // 更新显示消息数量
+            updateMessageCount();
+        }
+        
+        // 分页函数
+        function paginate() {
+            const visibleMessages = document.querySelectorAll('.divide-y > div.flex:not(.hidden-by-filter)');
+            const totalVisibleMessages = visibleMessages.length;
+            const totalPages = Math.ceil(totalVisibleMessages / messagesPerPage);
+            
+            // 保存当前可见消息的选中状态
+            const checkedStates = {};
+            visibleMessages.forEach((message, index) => {
+                const checkbox = message.querySelector('input[type="checkbox"]:not(#select-all)');
+                if (checkbox) {
+                    checkedStates[index] = checkbox.checked;
+                }
+            });
+            
+            // 隐藏所有消息
+            visibleMessages.forEach((message, index) => {
+                message.classList.add('hidden'); // 用于分页的隐藏
+                
+                // 显示当前页的消息
+                if (index >= (currentPage - 1) * messagesPerPage && index < currentPage * messagesPerPage) {
+                    message.classList.remove('hidden');
+                }
+                
+                // 恢复选中状态
+                const checkbox = message.querySelector('input[type="checkbox"]:not(#select-all)');
+                if (checkbox && checkedStates[index] !== undefined) {
+                    checkbox.checked = checkedStates[index];
+                }
+            });
+            
+            // 更新分页按钮状态
+            updatePaginationButtons(totalPages);
+            
+            // 更新分页信息
+            const startIndex = Math.min((currentPage - 1) * messagesPerPage + 1, totalVisibleMessages);
+            const endIndex = Math.min(currentPage * messagesPerPage, totalVisibleMessages);
+            
+            const pageDisplay = document.querySelector('.p-4.border-t span');
+            if (pageDisplay) {
+                pageDisplay.textContent = `显示 ${startIndex}-${endIndex} / ${totalVisibleMessages}`;
+            }
+            
+            // 更新全选复选框状态
+            updateSelectAllCheckboxState();
+        }
+        
+        // 更新全选复选框状态
+        function updateSelectAllCheckboxState() {
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                const visibleCheckboxes = document.querySelectorAll('.divide-y > div.flex:not(.hidden) input[type="checkbox"]:not(#select-all)');
+                if (visibleCheckboxes.length === 0) {
+                    selectAllCheckbox.checked = false;
+                    return;
+                }
+                
+                const allChecked = Array.from(visibleCheckboxes).every(checkbox => checkbox.checked);
+                selectAllCheckbox.checked = allChecked;
+            }
+        }
+        
+        // 更新分页按钮状态
+        function updatePaginationButtons(totalPages) {
+            const pageButtons = document.querySelectorAll('.page-btn');
+            const maxPageButtonsToShow = 4; // 不包括上一页/下一页按钮
+            
+            // 处理数字页码按钮
+            const numberButtons = Array.from(pageButtons).filter(btn => !isNaN(parseInt(btn.dataset.page)));
+            
+            // 确定要显示的页码范围
+            let startPage = Math.max(1, Math.min(currentPage - Math.floor(maxPageButtonsToShow / 2), totalPages - maxPageButtonsToShow + 1));
+            startPage = Math.max(1, startPage); // 确保不小于1
+            
+            // 更新页码按钮
+            numberButtons.forEach((btn, index) => {
+                const pageNum = startPage + index;
+                
+                if (pageNum <= totalPages) {
+                    btn.textContent = pageNum;
+                    btn.dataset.page = pageNum;
+                    btn.classList.remove('hidden');
+                    
+                    // 设置当前页按钮样式
+                    if (pageNum === currentPage) {
+                        btn.classList.remove('border-gray-300', 'text-gray-600', 'bg-white');
+                        btn.classList.add('border-blue-500', 'text-white', 'bg-blue-500');
+                    } else {
+                        btn.classList.remove('border-blue-500', 'text-white', 'bg-blue-500');
+                        btn.classList.add('border-gray-300', 'text-gray-600', 'bg-white');
+                    }
+                } else {
+                    // 隐藏多余的页码按钮
+                    btn.classList.add('hidden');
+                }
+            });
+            
+            // 处理上一页/下一页按钮
+            const prevBtn = document.querySelector('.page-btn[data-page="prev"]');
+            const nextBtn = document.querySelector('.page-btn[data-page="next"]');
+            
+            if (prevBtn) {
+                if (currentPage <= 1) {
+                    prevBtn.disabled = true;
+                    prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    prevBtn.disabled = false;
+                    prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            
+            if (nextBtn) {
+                if (currentPage >= totalPages) {
+                    nextBtn.disabled = true;
+                    nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    nextBtn.disabled = false;
+                    nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+        
+        // 更新未读消息计数
+        function updateUnreadCount() {
+            const totalMessages = document.querySelectorAll('.divide-y > div.flex').length;
+            const unreadMessages = document.querySelectorAll('.bg-blue-50').length;
+            
+            const countDisplay = document.querySelector('.text-gray-500');
+            if (countDisplay) {
+                countDisplay.textContent = `共${totalMessages}条消息，${unreadMessages}条未读`;
+            }
+        }
+        
+        // 更新显示消息计数
+        function updateMessageCount() {
+            const totalMessages = document.querySelectorAll('.divide-y > div.flex').length;
+            const visibleMessages = document.querySelectorAll('.divide-y > div.flex:not(.hidden-by-filter)').length;
+            const unreadMessages = document.querySelectorAll('.bg-blue-50').length;
+            
+            // 更新分页区域的消息计数
+            const countDisplay = document.querySelector('.text-gray-500');
+            if (countDisplay) {
+                countDisplay.textContent = `共${totalMessages}条消息，${unreadMessages}条未读`;
+            }
+        }
+        
+        // 为每个消息复选框添加change事件
+        function setupCheckboxListeners() {
+            const messageCheckboxes = document.querySelectorAll('.divide-y > div.flex input[type="checkbox"]:not(#select-all)');
+            messageCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    // 检查是否所有可见的复选框都被选中
+                    const visibleCheckboxes = document.querySelectorAll('.divide-y > div.flex:not(.hidden) input[type="checkbox"]:not(#select-all)');
+                    const allChecked = Array.from(visibleCheckboxes).every(cb => cb.checked);
+                    
+                    // 更新全选复选框状态
+                    const selectAllCheckbox = document.getElementById('select-all');
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = allChecked;
+                    }
+                });
+            });
+        }
+        
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 标签切换
+            const tabs = document.querySelectorAll('.border-b-2');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有标签的激活状态
+                    tabs.forEach(t => {
+                        t.classList.remove('tab-active', 'border-blue-500');
+                        t.classList.add('text-gray-600', 'border-transparent');
+                    });
+                    
+                    // 激活当前标签
+                    tab.classList.add('tab-active', 'border-blue-500');
+                    tab.classList.remove('text-gray-600', 'border-transparent');
+                    
+                    // 获取当前选中的标签文本
+                    const selectedTab = tab.textContent.trim();
+                    
+                    // 根据标签筛选消息
+                    filterMessages(selectedTab);
+                    
+                    // 重置分页到第一页
+                    currentPage = 1;
+                    paginate();
+                });
+            });
+            
+            // 为分页按钮添加点击事件
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (btn.disabled) return;
+                    
+                    const page = btn.dataset.page;
+                    const visibleMessages = document.querySelectorAll('.divide-y > div.flex:not(.hidden-by-filter)');
+                    const totalVisibleMessages = visibleMessages.length;
+                    const totalPages = Math.ceil(totalVisibleMessages / messagesPerPage);
+                    
+                    if (page === 'prev') {
+                        currentPage = Math.max(1, currentPage - 1);
+                    } else if (page === 'next') {
+                        currentPage = Math.min(totalPages, currentPage + 1);
+                    } else {
+                        currentPage = parseInt(page);
+                    }
+                    
+                    paginate();
+                });
+            });
+            
+            // 标记已读按钮
+            const markReadButtons = document.querySelectorAll('button.text-blue-600');
+            markReadButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const messageItem = e.target.closest('.bg-blue-50');
+                    if (messageItem) {
+                        messageItem.classList.remove('bg-blue-50');
+                        button.style.display = 'none';
+                        
+                        // 更新未读消息计数
+                        updateUnreadCount();
+                    }
+                });
+            });
+            
+            // 全部标为已读按钮
+            const markAllReadButton = document.getElementById('mark-all-read-btn');
+            if (markAllReadButton) {
+                markAllReadButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    const unreadMessages = document.querySelectorAll('.bg-blue-50');
+                    unreadMessages.forEach(message => {
+                        message.classList.remove('bg-blue-50');
+                        const markReadBtn = message.querySelector('button.text-blue-600');
+                        if (markReadBtn) {
+                            markReadBtn.style.display = 'none';
+                        }
+                    });
+                    
+                    // 更新未读消息计数
+                    updateUnreadCount();
+                });
+            }
+            
+            // 删除按钮
+            const deleteButtons = document.querySelectorAll('button.text-gray-500');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    const messageItem = e.target.closest('.p-4');
+                    if (messageItem && confirm('确定要删除这条消息吗？')) {
+                        messageItem.remove();
+                        
+                        // 更新消息计数
+                        updateUnreadCount();
+                        updateMessageCount();
+                        
+                        // 重新分页
+                        paginate();
+                    }
+                });
+            });
+            
+            // 删除选中按钮
+            const deleteSelectedButton = document.getElementById('delete-selected-btn');
+            if (deleteSelectedButton) {
+                console.log('找到删除选中按钮:', deleteSelectedButton.textContent); // 调试信息
+                
+                deleteSelectedButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    console.log('删除选中按钮被点击'); // 调试信息
+                    
+                    // 获取当前可见且被选中的复选框
+                    const selectedCheckboxes = document.querySelectorAll('.divide-y > div.flex:not(.hidden) input[type="checkbox"]:checked:not(#select-all)');
+                    
+                    console.log('选中的复选框数量:', selectedCheckboxes.length); // 调试信息
+                    
+                    if (selectedCheckboxes.length > 0) {
+                        if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 条消息吗？`)) {
+                            selectedCheckboxes.forEach(checkbox => {
+                                const messageItem = checkbox.closest('.p-4');
+                                if (messageItem) {
+                                    messageItem.remove();
+                                }
+                            });
+                            
+                            // 更新消息计数
+                            updateUnreadCount();
+                            updateMessageCount();
+                            
+                            // 重新分页
+                            paginate();
+                        }
+                    } else {
+                        alert('请先选择要删除的消息');
+                    }
+                });
+            } else {
+                console.error('未找到删除选中按钮!'); // 调试信息
+            }
+            
+            // 全选功能
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', () => {
+                    console.log('全选复选框状态变更:', selectAllCheckbox.checked); // 调试信息
+                    
+                    // 只选择当前页面可见的消息复选框
+                    const visibleCheckboxes = document.querySelectorAll('.divide-y > div.flex:not(.hidden) input[type="checkbox"]:not(#select-all)');
+                    console.log('可见复选框数量:', visibleCheckboxes.length); // 调试信息
+                    
+                    visibleCheckboxes.forEach(checkbox => {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    });
+                });
+            }
+            
+            // 初始化
+            initPage();
+        });
+    </script>
+</body>
+</html> 

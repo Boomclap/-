@@ -1,0 +1,113 @@
+@startuml Source Alignment Architecture
+
+!define RECTANGLE class
+
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor DarkGray
+}
+
+package "信源配置管理" {
+    class "信源注册中心" as SourceRegistry {
+        + 信源ID
+        + 信源类型
+        + 接入方式
+        + 认证信息
+    }
+
+    class "信源适配器" as SourceAdapter {
+        + API适配器
+        + 数据库适配器
+        + 网页爬虫适配器
+    }
+
+    class "信源能力表" as SourceCapability {
+        + 支持的属性
+        + 查询参数
+        + 响应映射
+    }
+}
+
+package "提示词配置" {
+    class "属性定义" as AttributeDef {
+        + 属性ID
+        + 属性名称
+        + 数据类型
+        + 验证规则
+    }
+
+    class "属性依赖关系" as AttributeDep {
+        + 源属性
+        + 目标属性
+        + 依赖类型
+        + 转换规则
+    }
+
+    class "查询链路配置" as QueryChain {
+        + 链路ID
+        + 步骤序列
+        + 回退策略
+    }
+}
+
+package "调研流程引擎" {
+    class "文献解析器" as DocParser {
+        + OCR处理
+        + 文本分析
+        + 属性提取
+    }
+
+    class "查询编排器" as QueryOrchestrator {
+        + 依赖分析
+        + 查询计划生成
+        + 并行处理
+    }
+
+    class "信源查询执行器" as QueryExecutor {
+        + 适配器选择
+        + 查询执行
+        + 结果缓存
+    }
+
+    class "结果聚合器" as ResultAggregator {
+        + 数据合并
+        + 冲突处理
+        + 质量评分
+    }
+}
+
+' 关系定义
+SourceRegistry "1" -- "n" SourceAdapter : 管理 >
+SourceRegistry "1" -- "1" SourceCapability : 定义能力 >
+
+AttributeDef "1" -- "n" AttributeDep : 建立依赖 >
+AttributeDep "n" -- "1" QueryChain : 组成 >
+
+DocParser --> ResultAggregator : 提供文献解析结果
+QueryOrchestrator --> QueryExecutor : 执行查询计划
+QueryExecutor --> ResultAggregator : 提供查询结果
+
+SourceAdapter <-- QueryExecutor : 调用
+SourceCapability <-- QueryOrchestrator : 参考
+QueryChain <-- QueryOrchestrator : 使用
+
+note right of QueryChain
+  示例查询链路：
+  1. 文献解析 -> 化合物中文名
+  2. 化源网查询 -> 英文名
+  3. PubChem查询 -> CAS号
+end note
+
+note right of SourceCapability
+  信源能力示例：
+  化源网：中文名→英文名
+  PubChem：英文名→CAS号
+end note
+
+@enduml

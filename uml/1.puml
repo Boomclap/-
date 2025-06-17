@@ -1,0 +1,99 @@
+@startuml
+
+skinparam rectangle {
+    BorderColor #555555
+    BackgroundColor #EEEEEE
+    ArrowColor #555555
+}
+skinparam actor {
+    BorderColor #555555
+    BackgroundColor #EEEEEE
+    ArrowColor #555555
+}
+skinparam node {
+    BorderColor #555555
+    BackgroundColor #FFFFFF
+    ArrowColor #555555
+}
+skinparam database {
+    BorderColor #555555
+    BackgroundColor #FFFFFF
+    ArrowColor #555555
+}
+
+skinparam stereotype {
+    CBackgroundColor #f66
+    NBackgroundColor #f9f
+    AgaBackgroundColor #ccf
+    DbMasterBackgroundColor #FFD700
+    DbReplicaBackgroundColor #E6E6FA
+}
+
+actor "顾客A" as User1
+actor "顾客B" as User2
+
+node "🚁 智能调度无人机\n(按位置/健康状况导航)" as GeoDNS <<N>>
+
+frame "城市商业区 (Region)" {
+    package "东城店 (Availability Zone A)" {
+        rectangle "👨‍💼 全能总管 (API网关)\n- 身份验证\n- 流量控制\n- 订单转发" as APG_A <<Aga>>
+        rectangle "👋 迎宾员 (负载均衡器)" as LB_A
+
+        package "后厨A (Backend Services)" {
+            rectangle "📋 实时员工通讯录\n(服务注册与发现)" as SR_A
+            rectangle "📌 大型订单处理台 (队列)" as MQ_A
+            rectangle "👨‍🍳 后台专职厨师 (异步处理)" as Worker_A
+            
+            package "汉堡站A (服务A)" {
+                rectangle "厨师A1" as Burger_A1
+                rectangle "厨师A2" as Burger_A2
+            }
+            package "薯条站A (服务B)" {
+                rectangle "🚨 智能经理 (熔断器)" as CB_A <<C>>
+                rectangle "炸炉A" as Fries_A
+            }
+            database "🔥 食物保温台 (缓存)" as Cache_A
+        }
+        database "👑 厨师长 (主数据库)" as DB_Master <<DbMaster>>
+    }
+
+    package "西城店 (Availability Zone B)" {
+        rectangle "👨‍💼 全能总管 (API网关)" as APG_B <<Aga>>
+        rectangle "👋 迎宾员 (负载均衡器)" as LB_B
+        package "后厨B (Backend Services)" {
+             package "汉堡站B (服务A)" {
+                rectangle "厨师B1" as Burger_B1
+            }
+            package "薯条站B (服务B)" {
+                rectangle "炸炉B" as Fries_B
+            }
+             database "🔥 食物保温台 (缓存)" as Cache_B
+        }
+        database "👨‍🎓 学徒 (从数据库)" as DB_Replica <<DbReplica>>
+    }
+}
+
+' --- Connections ---
+User1 --> GeoDNS
+User2 --> GeoDNS
+GeoDNS --> APG_A : 导航到东城店(优选)
+GeoDNS ..> APG_B : <color:red>东城店故障时, 切换
+
+APG_A --> LB_A
+LB_A --> Burger_A1
+LB_A --> Fries_A
+Fries_A --[#red]> CB_A : 故障报告
+CB_A --[#red]> LB_A : 暂停指令
+
+Burger_A1 .> SR_A : 登记/查询
+Fries_A .> SR_A : 登记/查询
+
+APG_A --> MQ_A : 大订单
+MQ_A ..> Worker_A : 通知处理
+
+DB_Master -> DB_Replica : 实时同步菜谱
+
+APG_B --> LB_B
+LB_B --> Burger_B1
+LB_B --> Fries_B
+@enduml

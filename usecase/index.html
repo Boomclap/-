@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用例查看</title>
-    <!-- 引入 Markdown 编辑器和预览器 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <!-- 引入 TinyMCE 编辑器 -->
+    <script src="https://cdn.tiny.cloud/1/2cbufzq97nuq3txnkzzhk9zqobt2r1yyx6gl53bc1k2a159y/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <!-- 引入 Markdown 渲染器 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 引入 HTML 到 Markdown 转换器 -->
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
     <!-- 引入字体图标 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
     <style>
@@ -165,6 +166,35 @@
             flex: 1;
             display: none;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tox-tinymce {
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            flex: 1;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mode-switch {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            background: white;
+            font-size: 14px;
+        }
+
+        .mode-switch.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         #preview {
@@ -310,6 +340,14 @@
             </div>
             <div class="content-container">
                 <div id="editor-container">
+                    <div class="editor-toolbar">
+                        <button class="mode-switch active" onclick="switchMode('wysiwyg')">
+                            <i class="fas fa-pen"></i> 富文本模式
+                        </button>
+                        <button class="mode-switch" onclick="switchMode('markdown')">
+                            <i class="fas fa-code"></i> Markdown模式
+                        </button>
+                    </div>
                     <textarea id="editor"></textarea>
                 </div>
                 <div id="preview"></div>
@@ -320,9 +358,11 @@
     <script>
         let editor;
         let currentFile = '';
+        let currentMode = 'wysiwyg';
+        let turndownService;
         let config = {
             editor: {
-                visible: false,
+                visible: true,
                 theme: 'light'
             },
             ui: {
@@ -366,33 +406,66 @@
         window.onload = async function() {
             await loadConfig();
             
-            editor = new EasyMDE({
-                element: document.getElementById('editor'),
-                autofocus: true,
-                spellChecker: false,
-                status: false,
-                toolbar: ["bold", "italic", "heading", "|", 
-                         "quote", "unordered-list", "ordered-list", "|",
-                         "link", "image", "table", "|",
-                         "preview", "side-by-side", "fullscreen", "|",
-                         "guide"],
-                previewRender: function(plainText) {
-                    return marked.parse(plainText);
-                }
+            // 初始化 Turndown
+            turndownService = new TurndownService({
+                headingStyle: 'atx',
+                hr: '---',
+                bulletListMarker: '-',
+                codeBlockStyle: 'fenced',
+                emDelimiter: '*'
             });
 
-            // 监听编辑器变化，实时更新预览
-            editor.codemirror.on("change", () => {
-                document.getElementById('preview').innerHTML = marked.parse(editor.value());
+            tinymce.init({
+                selector: '#editor',
+                plugins: 'markdown preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+                toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | forecolor backcolor removeformat | link image media table | code fullscreen',
+                height: '100%',
+                toolbar_sticky: true,
+                autosave_ask_before_unload: true,
+                autosave_interval: '30s',
+                menubar: 'file edit view insert format tools table help',
+                content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+                setup: function(editor) {
+                    editor.on('Change', function() {
+                        updatePreview();
+                    });
+                },
+                init_instance_callback: function(ed) {
+                    editor = ed;
+                }
             });
 
             loadNavigation();
         };
 
-        // 切换编辑器显示状态
-        function toggleEditor() {
-            config.editor.visible = !config.editor.visible;
-            applyConfig();
+        // 切换编辑模式
+        function switchMode(mode) {
+            if (mode === currentMode) return;
+            currentMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-switch').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(mode === 'wysiwyg' ? '富文本' : 'Markdown'));
+            });
+
+            if (mode === 'markdown') {
+                // 转换为Markdown
+                const content = editor.getContent();
+                editor.setContent(toMarkdown(content));
+            } else {
+                // 转换为HTML
+                const content = editor.getContent();
+                editor.setContent(marked.parse(content));
+            }
+            
+            updatePreview();
+        }
+
+        // 更新预览
+        function updatePreview() {
+            const content = editor.getContent();
+            const previewContent = currentMode === 'markdown' ? marked.parse(content) : content;
+            document.getElementById('preview').innerHTML = previewContent;
         }
 
         // 加载导航
@@ -418,8 +491,14 @@
                 currentFile = filename;
                 const response = await fetch(`cases/${filename}`);
                 const content = await response.text();
-                editor.value(content);
-                document.getElementById('preview').innerHTML = marked.parse(content);
+                
+                if (currentMode === 'markdown') {
+                    editor.setContent(content);
+                } else {
+                    editor.setContent(marked.parse(content));
+                }
+                
+                updatePreview();
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
                 document.querySelector(`[onclick="loadCase('${filename}')"]`).classList.add('active');
             } catch (error) {
@@ -431,7 +510,11 @@
         async function saveContent() {
             if (!currentFile || !editor) return;
             try {
-                const content = editor.value();
+                let content = editor.getContent();
+                if (currentMode === 'wysiwyg') {
+                    content = toMarkdown(content);
+                }
+                
                 const response = await fetch(`/save`, {
                     method: 'POST',
                     headers: {
@@ -442,6 +525,7 @@
                         content: content
                     })
                 });
+                
                 if (response.ok) {
                     showNotification('保存成功！');
                 } else {
@@ -451,6 +535,11 @@
                 console.error('保存失败:', error);
                 showNotification('保存失败，请检查控制台获取详细信息', 'error');
             }
+        }
+
+        // HTML转Markdown的辅助函数
+        function toMarkdown(html) {
+            return turndownService.turndown(html);
         }
 
         // 显示通知

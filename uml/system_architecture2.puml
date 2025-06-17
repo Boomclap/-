@@ -1,0 +1,157 @@
+@startuml System Architecture
+
+!define RECTANGLE class
+
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor DarkGray
+}
+
+package "前置准备层" {
+    class "信源管理" as SourceMgmt {
+        + 第三方API
+        + 数据库
+        + 网址
+    }
+    
+    class "文献库" as Literature {
+        + 文献内容
+        + 文献元数据
+    }
+    
+    class "提示词管理" as PromptMgmt {
+        + 提示词模板
+        + 属性映射表
+        ..其他属性..
+    }
+}
+
+package "调研处理层" {
+    class "流程引擎" as ProcessEngine {
+        + OCR处理
+        + 信源对齐
+        + 数据提取
+    }
+    
+    class "调研结果" as ResearchResult {
+        + Markdown文本
+        + 属性映射结果
+    }
+}
+
+package "开放平台接口层" {
+    class "接口定义管理" as InterfaceDefMgmt {
+        + 接口Schema定义
+        + 字段映射规则
+        + 数据验证规则
+    }
+
+    class "Schema生成器" as SchemaGenerator {
+        + 表结构生成
+        + 索引创建
+        + 约束定义
+    }
+
+    class "接口文档生成器" as DocGenerator {
+        + API文档
+        + SDK生成
+        + 示例代码
+    }
+}
+
+package "AI辅助层" {
+    class "结构识别器" as StructureRecognizer {
+        + 文本分析
+        + 模式匹配
+        + 语义理解
+    }
+
+    class "Schema匹配器" as SchemaMatcher {
+        + 字段映射
+        + 类型转换
+        + 规则验证
+    }
+
+    class "数据转换器" as DataTransformer {
+        + 格式转换
+        + 数据清洗
+        + 质量控制
+    }
+}
+
+package "存储层" {
+    class "原始结果库" as RawDB {
+        + 非结构化数据
+        + 临时存储
+    }
+
+    class "动态结构化存储" as DynamicDB {
+        + 动态表管理
+        + 索引优化
+        + 版本控制
+    }
+
+    class "结果状态管理" as StatusManager {
+        + 审核流程
+        + 状态追踪
+        + 变更记录
+    }
+}
+
+' 关系定义
+SourceMgmt --> ProcessEngine
+Literature --> ProcessEngine
+PromptMgmt --> ProcessEngine
+ProcessEngine --> ResearchResult
+
+InterfaceDefMgmt --> SchemaGenerator : 生成表结构
+InterfaceDefMgmt --> DocGenerator : 生成文档
+SchemaGenerator --> DynamicDB : 创建表
+
+ResearchResult --> StructureRecognizer : 分析
+StructureRecognizer --> SchemaMatcher : 匹配Schema
+InterfaceDefMgmt --> SchemaMatcher : 提供Schema
+SchemaMatcher --> DataTransformer : 转换
+DataTransformer --> DynamicDB : 存储
+
+ResearchResult --> RawDB : 临时存储
+DynamicDB --> StatusManager : 状态管理
+
+note right of InterfaceDefMgmt
+  接口定义示例：
+  {
+    "name": "compound_info",
+    "fields": [
+      {"name": "cn_name", "type": "string"},
+      {"name": "en_name", "type": "string"},
+      {"name": "cas_no", "type": "string"}
+    ],
+    "validations": {...}
+  }
+end note
+
+note right of SchemaGenerator
+  生成SQL示例：
+  CREATE TABLE compound_info (
+    id UUID PRIMARY KEY,
+    cn_name VARCHAR(255),
+    en_name VARCHAR(255),
+    cas_no VARCHAR(50),
+    ...
+  )
+end note
+
+note right of SchemaMatcher
+  匹配策略：
+  1. 精确字段匹配
+  2. 语义相似度匹配
+  3. 规则推导匹配
+end note
+
+@enduml 

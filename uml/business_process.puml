@@ -1,0 +1,42 @@
+@startuml Business Process Flow
+
+skinparam activityBackgroundColor LightBlue
+skinparam activityBorderColor DarkBlue
+skinparam arrowColor DarkBlue
+
+|前置准备阶段|
+start
+:信源管理;
+note right: 包含第三方API、数据库、网址
+:文献;
+:提示词;
+
+|调研阶段|
+:流程;
+note right: 包含OCR、信源对齐等步骤
+:生成调研结果;
+
+|入库阶段|
+if (用户选择接口?) then (是)
+  :AI辅助匹配接口;
+  :根据接口定义保存到\n结构化结果数据库;
+else (否)
+  :保存到结果数据库;
+endif
+
+:编辑审核;
+:更新结果状态为审核通过;
+
+|开放接口平台|
+:用户定义开放平台接口;
+note right: 支持自定义接口格式和规范
+fork
+  :外部系统按接口定义\n获取审核通过的数据;
+fork again
+  :接口文档和SDK;
+  note right: 提供接口使用指南
+end fork
+
+stop
+
+@enduml 

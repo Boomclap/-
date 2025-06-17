@@ -1,0 +1,97 @@
+@startuml System Architecture
+
+!define RECTANGLE class
+
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor DarkGray
+}
+
+package "前置准备层" {
+    class "信源管理" as SourceMgmt {
+        + 第三方API
+        + 数据库
+        + 网址
+    }
+    
+    class "文献库" as Literature {
+        + 文献内容
+        + 文献元数据
+    }
+    
+    class "提示词管理" as PromptMgmt {
+        + 提示词模板
+        + 属性映射表
+        + 药材中文名
+        ..其他属性..
+    }
+}
+
+package "调研处理层" {
+    class "流程引擎" as ProcessEngine {
+        + OCR处理
+        + 信源对齐
+        + 数据提取
+    }
+    
+    class "调研结果" as ResearchResult {
+        + Markdown文本
+        + 结构化数据
+        + 属性映射结果
+    }
+}
+
+package "入库层" {
+    class "结果数据库" as ResultDB {
+        + 原始结果
+    }
+    
+    class "结构化结果库" as StructuredDB {
+        + 接口映射结果
+        + 审核状态
+    }
+}
+
+package "开放平台层" {
+    class "接口定义管理" as APIDefMgmt {
+        + 接口Schema定义
+        + 属性映射规则
+        + 验证规则
+    }
+    
+    class "AI辅助模块" as AIAssistant {
+        + 接口匹配
+        + 数据验证
+    }
+    
+    class "开放API网关" as APIGateway {
+        + 接口访问控制
+        + 数据格式转换
+        + 结果过滤
+    }
+}
+
+' 关系定义
+PromptMgmt "1" -- "n" APIDefMgmt : 属性映射 >
+note right on link: cname映射到药材中文名
+
+ProcessEngine --> ResearchResult : 生成
+SourceMgmt --> ProcessEngine : 输入
+Literature --> ProcessEngine : 输入
+PromptMgmt --> ProcessEngine : 配置
+
+ResearchResult --> ResultDB : 存储
+ResearchResult --> AIAssistant : 分析
+AIAssistant --> StructuredDB : 结构化存储
+
+APIDefMgmt --> APIGateway : 配置
+APIGateway --> StructuredDB : 读取
+StructuredDB --> APIGateway : 返回数据
+
+@enduml

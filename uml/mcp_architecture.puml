@@ -1,0 +1,169 @@
+@startuml MCP Architecture
+
+!define RECTANGLE class
+
+skinparam class {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    ArrowColor DarkBlue
+}
+
+skinparam package {
+    BackgroundColor White
+    BorderColor DarkGray
+}
+
+package "Model Layer" {
+    package "Domain Models" {
+        class "SourceModel" as Source {
+            + 信源配置
+            + 认证信息
+            + 访问策略
+        }
+
+        class "DocumentModel" as Document {
+            + 文献内容
+            + 元数据
+            + 解析规则
+        }
+
+        class "PromptModel" as Prompt {
+            + 提示词模板
+            + 属性定义
+            + 映射规则
+        }
+
+        class "ResearchModel" as Research {
+            + 调研数据
+            + 结构化结果
+            + 验证状态
+        }
+    }
+
+    package "Value Objects" {
+        class "AttributeVO" as Attribute {
+            + 属性定义
+            + 验证规则
+            + 转换规则
+        }
+
+        class "SchemaVO" as Schema {
+            + 接口定义
+            + 字段映射
+            + 验证规则
+        }
+    }
+}
+
+package "Controller Layer" {
+    package "Business Controllers" {
+        class "ResearchController" as ResearchCtrl {
+            + 调研流程编排
+            + 状态管理
+            + 结果验证
+        }
+
+        class "InterfaceController" as InterfaceCtrl {
+            + 接口定义管理
+            + Schema生成
+            + 文档生成
+        }
+    }
+
+    package "Process Controllers" {
+        class "ExtractController" as ExtractCtrl {
+            + OCR处理
+            + 文本分析
+            + 属性提取
+        }
+
+        class "AlignController" as AlignCtrl {
+            + 信源对齐
+            + 数据匹配
+            + 结果合并
+        }
+    }
+}
+
+package "Provider Layer" {
+    package "Data Providers" {
+        class "SourceProvider" as SourceProv {
+            + 信源访问
+            + 数据获取
+            + 结果缓存
+        }
+
+        class "StorageProvider" as StorageProv {
+            + 动态表管理
+            + 数据存储
+            + 状态追踪
+        }
+    }
+
+    package "Service Providers" {
+        class "AIProvider" as AIProv {
+            + 语义分析
+            + Schema匹配
+            + 数据转换
+        }
+
+        class "ValidationProvider" as ValidProv {
+            + 数据验证
+            + 质量评估
+            + 结果审核
+        }
+    }
+}
+
+' 关系定义
+' Model层内部关系
+Source "1" -- "n" Attribute : contains
+Document "1" -- "n" Attribute : extracts
+Prompt "1" -- "n" Schema : defines
+Research "1" -- "n" Schema : validates
+
+' Controller对Model的依赖
+ResearchCtrl --> Research : manages
+ResearchCtrl --> Document : processes
+InterfaceCtrl --> Schema : generates
+ExtractCtrl --> Document : extracts
+AlignCtrl --> Source : aligns
+
+' Provider对Model的访问
+SourceProv --> Source : accesses
+StorageProv --> Research : stores
+AIProv --> Schema : matches
+ValidProv --> Research : validates
+
+' Controller使用Provider
+ResearchCtrl ..> SourceProv : uses
+ResearchCtrl ..> AIProv : uses
+InterfaceCtrl ..> StorageProv : uses
+ExtractCtrl ..> AIProv : uses
+AlignCtrl ..> ValidProv : uses
+
+note right of ResearchCtrl
+  调研流程示例：
+  1. 接收调研请求
+  2. 编排处理流程
+  3. 协调各Provider
+  4. 管理处理状态
+end note
+
+note right of InterfaceCtrl
+  接口处理流程：
+  1. 定义接口Schema
+  2. 生成存储结构
+  3. 配置验证规则
+  4. 生成接口文档
+end note
+
+note right of AIProv
+  AI能力：
+  1. 语义理解
+  2. 模式识别
+  3. 智能匹配
+  4. 数据转换
+end note
+
+@enduml 

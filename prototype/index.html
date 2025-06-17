@@ -231,6 +231,58 @@
             <!-- User/Task Icons -->
             <div class="flex items-center space-x-4 ml-4">
                 <div class="relative">
+                    <button id="messages-button" class="text-slate-500 hover:text-blue-600 relative">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                    </button>
+                    <!-- Messages Dropdown -->
+                    <div id="messages-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg border border-slate-200 z-50">
+                        <div class="py-2 px-3 border-b border-slate-200 flex justify-between items-center">
+                            <h3 class="text-sm font-semibold text-slate-700">消息通知</h3>
+                            <button class="text-xs text-blue-600 hover:underline">全部标为已读</button>
+                        </div>
+                        <div class="p-0 max-h-80 overflow-y-auto custom-scrollbar">
+                            <div class="border-b border-slate-100 p-3 hover:bg-slate-50">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-2">
+                                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-slate-700">白芍相关文献对齐入库成功</p>
+                                        <p class="text-xs text-slate-500 mt-1">2023-05-12 10:00:00</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-b border-slate-100 p-3 hover:bg-slate-50">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-2">
+                                        <i class="fas fa-times-circle text-red-500 mt-0.5"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-slate-700">IBD文献解析失败，格式错误</p>
+                                        <p class="text-xs text-slate-500 mt-1">2023-05-11 16:45:23</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-b border-slate-100 p-3 hover:bg-slate-50 bg-blue-50">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mr-2">
+                                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-slate-700">系统更新完成，新增批量导入功能</p>
+                                        <p class="text-xs text-slate-500 mt-1">2023-05-10 08:30:15</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-t border-slate-200 text-center">
+                            <a href="#" class="text-xs text-blue-600 hover:underline" 
+                               onclick="openTab('所有消息', 'all_messages.html'); document.getElementById('messages-dropdown').classList.add('hidden'); return false;">查看所有消息</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
                     <button id="tasks-button" class="text-slate-500 hover:text-blue-600 relative">
                         <i class="fas fa-tasks text-lg"></i>
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">2</span>
@@ -314,6 +366,8 @@
         const treeItems = document.querySelectorAll('#main-tree-nav .tree-item > div'); // Select the clickable div
         const tasksButton = document.getElementById('tasks-button');
         const tasksDropdown = document.getElementById('tasks-dropdown');
+        const messagesButton = document.getElementById('messages-button');
+        const messagesDropdown = document.getElementById('messages-dropdown');
         const literatureTagsBtn = document.getElementById('literature-tags-btn');
         const addLiteratureBtn = document.getElementById('add-literature-btn');
         const collapsedTagsBtn = document.getElementById('collapsed-tags-btn');
@@ -374,6 +428,10 @@
             // Hide tasks dropdown
             if (!tasksDropdown.contains(e.target) && e.target !== tasksButton && !tasksButton.contains(e.target)) {
                 tasksDropdown.classList.add('hidden');
+            }
+            // Hide messages dropdown
+            if (!messagesDropdown.contains(e.target) && e.target !== messagesButton && !messagesButton.contains(e.target)) {
+                messagesDropdown.classList.add('hidden');
             }
         });
 
@@ -496,6 +554,18 @@
         tasksButton.addEventListener('click', (e) => {
             e.stopPropagation();
             tasksDropdown.classList.toggle('hidden');
+            // Hide other dropdowns
+            messagesDropdown.classList.add('hidden');
+            userDropdown.classList.add('hidden');
+        });
+
+        // Messages Dropdown Toggle
+        messagesButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            messagesDropdown.classList.toggle('hidden');
+            // Hide other dropdowns
+            tasksDropdown.classList.add('hidden');
+            userDropdown.classList.add('hidden');
         });
 
         // Literature Tags Button Action
@@ -548,6 +618,9 @@
             userAvatarButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 userDropdown.classList.toggle('hidden');
+                // Hide other dropdowns
+                tasksDropdown.classList.add('hidden');
+                messagesDropdown.classList.add('hidden');
             });
         }
 
@@ -689,6 +762,52 @@
         // Initial setup calls
         if (mainTreeNav) {
             addListenersToTreeItems(mainTreeNav, false); // Attach listeners to the main tree on initial load
+        }
+
+        // 消息相关功能
+        document.querySelectorAll('#messages-dropdown .border-b.border-slate-100').forEach(messageItem => {
+            messageItem.addEventListener('click', () => {
+                // 处理点击单个消息的逻辑
+                messageItem.classList.remove('bg-blue-50'); // 移除未读状态
+                
+                // 更新未读消息数量
+                updateMessageCount();
+            });
+        });
+
+        // "全部标为已读"按钮点击事件
+        const markAllReadBtn = document.querySelector('#messages-dropdown button.text-blue-600');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // 移除所有消息的未读状态
+                document.querySelectorAll('#messages-dropdown .border-b.border-slate-100').forEach(item => {
+                    item.classList.remove('bg-blue-50');
+                });
+                
+                // 更新未读消息数量为0
+                const msgCountBadge = messagesButton.querySelector('span');
+                if (msgCountBadge) {
+                    msgCountBadge.textContent = '0';
+                    msgCountBadge.classList.add('hidden');
+                }
+            });
+        }
+
+        // 更新未读消息数量
+        function updateMessageCount() {
+            const unreadMessages = document.querySelectorAll('#messages-dropdown .border-b.border-slate-100.bg-blue-50').length;
+            const msgCountBadge = messagesButton.querySelector('span');
+            
+            if (msgCountBadge) {
+                if (unreadMessages > 0) {
+                    msgCountBadge.textContent = unreadMessages;
+                    msgCountBadge.classList.remove('hidden');
+                } else {
+                    msgCountBadge.classList.add('hidden');
+                }
+            }
         }
 
     </script>

@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 
 # 设置服务器端口
-PORT = 8000
+PORT = 8100
 
 # 自定义请求处理器，添加 CORS 头
 class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):

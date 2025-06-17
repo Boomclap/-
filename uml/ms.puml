@@ -1,0 +1,59 @@
+graph TD
+    subgraph 用户端 (Client Side)
+        User[用户 (浏览器/APP)] --> |1. 刷新页面| CDN
+        User --> |4. 点击秒杀| CDN
+    end
+
+    subgraph 边缘网络 (Edge)
+        CDN["CDN<br/>- 静态资源缓存 (HTML, JS, CSS, 图片)<br/>- 边缘节点缓存秒杀状态"]
+    end
+
+    subgraph 网关层 (Gateway Layer)
+        APG["API Gateway (Nginx+Lua / Spring Cloud Gateway)<br/>- <strong>风控/限流</strong>: 过滤黄牛, IP/用户ID限流<br/>- <strong>身份认证</strong><br/>- <strong>请求路由</strong>"]
+    end
+
+    subgraph 业务逻辑层 (Business Logic Layer)
+        LB["Load Balancer"]
+        
+        subgraph "秒杀服务集群 (Stateless)"
+            MS1["秒杀服务 1"]
+            MS2["秒杀服务 2"]
+            MS3["秒杀服务 N"]
+        end
+
+        MQ["消息队列 (Message Queue)<br/>e.g., Kafka, RocketMQ<br/>- <strong>削峰填谷</strong>: 缓冲海量下单请求<br/>- <strong>异步解耦</strong>"]
+
+        Worker["订单处理服务 (Worker)<br/>- 消费队列消息<br/>- 创建真实订单"]
+    end
+
+    subgraph 数据与状态层 (Data & State Layer)
+        subgraph "缓存集群 (Cache Cluster)"
+            Redis["Redis<br/>- <strong>库存预减 (Atomic DECR)</strong><br/>- 秒杀资格令牌<br/>- 已秒杀用户名单 (Set)"]
+        end
+        
+        subgraph "数据库集群 (Database Cluster)"
+            DB_Master["主数据库 (MySQL)<br/>- 存储最终订单<br/>- 持久化库存"]
+            DB_Replica["从数据库<br/>- 读订单详情"]
+        end
+    end
+
+    subgraph 监控与治理 (Monitoring & Governance)
+        Monitor["监控告警系统 (Prometheus + Grafana)<br/>- 实时监控QPS, 延迟, 错误率"]
+        Nacos["Nacos<br/>- 服务发现<br/>- 动态配置 (秒杀开关, 限流阈值)"]
+    end
+    
+    %% 流程连线
+    CDN --> |2. 静态资源| User
+    CDN --> |3. 回源动态数据| APG
+    APG --> |5. 合法请求| LB
+    LB --> |6. 分发| MS1
+    MS1 -- "与Nacos交互" --> Nacos
+    MS1 -- "获取配置" --> Nacos
+    MS1 --> |7. 检查资格/预减库存| Redis
+    Redis -- "库存不足" --> MS1
+    MS1 -- "库存充足, 写入队列" --> |8. 发送下单消息| MQ
+    MS1 --> |9. 立即返回"排队中"| User
+    MQ --> |10. 拉取消息| Worker
+    Worker --> |11. 创建订单| DB_Master
+    Worker --> |12. 更新用户状态| Redis
+    User -- "查询订单状态" --> APG --> LB --> DB_Replica
