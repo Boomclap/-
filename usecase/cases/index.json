@@ -1,5 +1,9 @@
 [
     {
+        "title": "消息推送与通知管理",
+        "file": "message_notification.md"
+    },
+    {
         "title": "批量解析压缩包上传文献",
         "file": "use_case_batch_upload.md"
     },{
